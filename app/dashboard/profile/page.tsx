@@ -1,0 +1,1075 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  User,
+  Settings,
+  Bell,
+  Shield,
+  LogOut,
+  Edit,
+  Save,
+  X,
+  Check,
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Lock,
+  Smartphone,
+  Mail,
+  Calendar,
+  Clock,
+  Moon,
+  Sun,
+  Trash2,
+} from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
+import { useMobile } from "@/hooks/use-mobile"
+import { DeleteAccountDialog } from "@/components/delete-account-dialog"
+
+// Sample user data
+const userData = {
+  id: "U-1001",
+  name: "Dr. Rebecca Taylor",
+  email: "rebecca.taylor@medisync.com",
+  phone: "(555) 123-4567",
+  role: "Cardiologist",
+  department: "Cardiology",
+  licenseNumber: "MD-12345-CA",
+  joinDate: "2020-06-15",
+  lastActive: "2023-05-19T08:30:00",
+  avatar: "/placeholder.svg?height=128&width=128&text=RT",
+  twoFactorEnabled: true,
+  notificationPreferences: {
+    email: true,
+    sms: false,
+    app: true,
+    appointments: true,
+    updates: true,
+    marketing: false,
+  },
+  displayPreferences: {
+    theme: "light",
+    colorScheme: "blue",
+    compactMode: false,
+    animations: true,
+  },
+  securityInfo: {
+    lastPasswordChange: "2023-04-10",
+    passwordStrength: 85,
+    loginHistory: [
+      { date: "2023-05-19T08:30:00", device: "Chrome / Windows", location: "San Francisco, CA" },
+      { date: "2023-05-18T17:45:00", device: "Mobile App / iOS", location: "San Francisco, CA" },
+      { date: "2023-05-17T09:15:00", device: "Chrome / Windows", location: "San Francisco, CA" },
+    ],
+  },
+}
+
+export default function ProfilePage() {
+  const isMobile = useMobile()
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
+  const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("personal")
+  const [editMode, setEditMode] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    name: userData.name,
+    email: userData.email,
+    phone: userData.phone,
+    department: userData.department,
+    licenseNumber: userData.licenseNumber,
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  })
+
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    setSidebarOpen(!isMobile)
+  }, [isMobile])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSavePersonalInfo = () => {
+    // Here you would typically save the data to your backend
+    // For this demo, we'll just toggle edit mode off
+    setEditMode(false)
+    // Show success notification
+  }
+
+  const handleCancelEdit = () => {
+    // Reset form data to original values
+    setFormData({
+      ...formData,
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      department: userData.department,
+      licenseNumber: userData.licenseNumber,
+    })
+    setEditMode(false)
+  }
+
+  const handlePasswordChange = () => {
+    // Here you would validate and submit the password change
+    // For this demo, we'll just reset the form
+    setFormData({
+      ...formData,
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    })
+    // Show success notification
+  }
+
+  const calculatePasswordStrength = (password: string) => {
+    if (!password) return 0
+
+    // Simple password strength calculation
+    let strength = 0
+
+    // Length check
+    if (password.length >= 8) strength += 25
+
+    // Character variety checks
+    if (/[A-Z]/.test(password)) strength += 25
+    if (/[0-9]/.test(password)) strength += 25
+    if (/[^A-Za-z0-9]/.test(password)) strength += 25
+
+    return strength
+  }
+
+  const passwordStrength = calculatePasswordStrength(formData.newPassword)
+
+  const getPasswordStrengthLabel = () => {
+    if (passwordStrength <= 25) return { label: "Weak", color: "text-red-500" }
+    if (passwordStrength <= 50) return { label: "Fair", color: "text-amber-500" }
+    if (passwordStrength <= 75) return { label: "Good", color: "text-blue-500" }
+    return { label: "Strong", color: "text-green-500" }
+  }
+
+  const getPasswordStrengthColor = () => {
+    if (passwordStrength <= 25) return "bg-red-500"
+    if (passwordStrength <= 50) return "bg-amber-500"
+    if (passwordStrength <= 75) return "bg-blue-500"
+    return "bg-green-500"
+  }
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  }
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative h-12 w-12 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600">
+            <User className="absolute inset-0 m-auto text-white h-6 w-6" />
+          </div>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: 150 }}
+            transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
+            className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
+          />
+          <p className="mt-4 text-sm text-slate-600">Loading your profile...</p>
+        </motion.div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+      {/* Sidebar */}
+      <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Header is included in the DashboardSidebar component */}
+
+        {/* Profile Content */}
+        <main className="flex-1 overflow-auto p-4 md:p-6">
+          <motion.div initial="hidden" animate="show" variants={container} className="mx-auto max-w-4xl space-y-6">
+            {/* Page Title */}
+            <motion.div variants={item} className="flex flex-col gap-1">
+              <h1 className="text-2xl font-bold tracking-tight">My Profile</h1>
+              <p className="text-sm text-slate-500">Manage your account settings and preferences</p>
+            </motion.div>
+
+            {/* Profile Header */}
+            <motion.div variants={item}>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
+                    <div className="relative">
+                      <Avatar className="h-24 w-24 border-4 border-white shadow-md">
+                        <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={userData.name} />
+                        <AvatarFallback className="text-lg">
+                          {userData.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            size="icon"
+                            className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Change avatar</span>
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Change Profile Picture</DialogTitle>
+                            <DialogDescription>
+                              Upload a new profile picture. The image should be at least 400x400 pixels.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="flex flex-col items-center gap-4">
+                              <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+                                <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={userData.name} />
+                                <AvatarFallback className="text-2xl">
+                                  {userData.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="grid w-full gap-2">
+                                <Label htmlFor="picture">Upload Picture</Label>
+                                <Input id="picture" type="file" accept="image/*" />
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline">Cancel</Button>
+                            <Button>Save Changes</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    <div className="flex flex-1 flex-col items-center text-center md:items-start md:text-left">
+                      <h2 className="text-xl font-bold">{userData.name}</h2>
+                      <p className="text-slate-500">{userData.role}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          {userData.department}
+                        </Badge>
+                        <Badge variant="outline" className="bg-slate-100">
+                          License: {userData.licenseNumber}
+                        </Badge>
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            Joined{" "}
+                            {new Date(userData.joinDate).toLocaleDateString("en-US", {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            Last active{" "}
+                            {new Date(userData.lastActive).toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 md:self-start">
+                      <Button
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => {
+                          setEditMode(!editMode)
+                          if (!editMode) {
+                            setActiveTab("personal")
+                          }
+                        }}
+                      >
+                        {editMode ? (
+                          <>
+                            <X className="h-4 w-4" /> Cancel Editing
+                          </>
+                        ) : (
+                          <>
+                            <Edit className="h-4 w-4" /> Edit Profile
+                          </>
+                        )}
+                      </Button>
+                      <Button variant="outline" className="gap-2 text-red-600 hover:text-red-700">
+                        <LogOut className="h-4 w-4" /> Sign Out
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Profile Tabs */}
+            <motion.div variants={item}>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="personal" className="flex gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">Personal Info</span>
+                    <span className="sm:hidden">Info</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="security" className="flex gap-2">
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden sm:inline">Security</span>
+                    <span className="sm:hidden">Security</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="notifications" className="flex gap-2">
+                    <Bell className="h-4 w-4" />
+                    <span className="hidden sm:inline">Notifications</span>
+                    <span className="sm:hidden">Alerts</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="preferences" className="flex gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Preferences</span>
+                    <span className="sm:hidden">Prefs</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Personal Information Tab */}
+                <TabsContent value="personal">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Personal Information</CardTitle>
+                      <CardDescription>Manage your personal information and contact details</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Full Name</Label>
+                          <Input
+                            id="name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            disabled={!editMode}
+                            className={editMode ? "border-blue-300" : ""}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email Address</Label>
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            disabled={!editMode}
+                            className={editMode ? "border-blue-300" : ""}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">Phone Number</Label>
+                          <Input
+                            id="phone"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            disabled={!editMode}
+                            className={editMode ? "border-blue-300" : ""}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="department">Department</Label>
+                          <Input
+                            id="department"
+                            name="department"
+                            value={formData.department}
+                            onChange={handleInputChange}
+                            disabled={!editMode}
+                            className={editMode ? "border-blue-300" : ""}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="licenseNumber">License Number</Label>
+                        <Input
+                          id="licenseNumber"
+                          name="licenseNumber"
+                          value={formData.licenseNumber}
+                          onChange={handleInputChange}
+                          disabled={!editMode}
+                          className={editMode ? "border-blue-300" : ""}
+                        />
+                      </div>
+                    </CardContent>
+                    <AnimatePresence>
+                      {editMode && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <CardFooter className="flex justify-end gap-2 border-t bg-slate-50 px-6 py-4">
+                            <Button variant="outline" onClick={handleCancelEdit}>
+                              Cancel
+                            </Button>
+                            <Button onClick={handleSavePersonalInfo}>
+                              <Save className="mr-2 h-4 w-4" />
+                              Save Changes
+                            </Button>
+                          </CardFooter>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Card>
+                </TabsContent>
+
+                {/* Security Tab */}
+                <TabsContent value="security">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Password</CardTitle>
+                        <CardDescription>Change your password and manage your account security</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="currentPassword">Current Password</Label>
+                            <span className="text-xs text-slate-500">
+                              Last changed: {new Date(userData.securityInfo.lastPasswordChange).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="relative">
+                            <Input
+                              id="currentPassword"
+                              name="currentPassword"
+                              type={showPassword ? "text" : "password"}
+                              value={formData.currentPassword}
+                              onChange={handleInputChange}
+                              className="pr-10"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0 h-full px-3 py-2 text-slate-400 hover:text-slate-600"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword">New Password</Label>
+                          <div className="relative">
+                            <Input
+                              id="newPassword"
+                              name="newPassword"
+                              type={showPassword ? "text" : "password"}
+                              value={formData.newPassword}
+                              onChange={handleInputChange}
+                              className="pr-10"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0 h-full px-3 py-2 text-slate-400 hover:text-slate-600"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                            </Button>
+                          </div>
+                          {formData.newPassword && (
+                            <div className="mt-2 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs">Password Strength</span>
+                                <span className={`text-xs font-medium ${getPasswordStrengthLabel().color}`}>
+                                  {getPasswordStrengthLabel().label}
+                                </span>
+                              </div>
+                              <Progress
+                                value={passwordStrength}
+                                className="h-1"
+                                indicatorClassName={getPasswordStrengthColor()}
+                              />
+                              <ul className="mt-2 space-y-1 text-xs text-slate-500">
+                                <li className="flex items-center gap-1">
+                                  <Check
+                                    className={`h-3 w-3 ${formData.newPassword.length >= 8 ? "text-green-500" : "text-slate-300"}`}
+                                  />
+                                  <span>At least 8 characters</span>
+                                </li>
+                                <li className="flex items-center gap-1">
+                                  <Check
+                                    className={`h-3 w-3 ${/[A-Z]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300"}`}
+                                  />
+                                  <span>At least one uppercase letter</span>
+                                </li>
+                                <li className="flex items-center gap-1">
+                                  <Check
+                                    className={`h-3 w-3 ${/[0-9]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300"}`}
+                                  />
+                                  <span>At least one number</span>
+                                </li>
+                                <li className="flex items-center gap-1">
+                                  <Check
+                                    className={`h-3 w-3 ${/[^A-Za-z0-9]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300"}`}
+                                  />
+                                  <span>At least one special character</span>
+                                </li>
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type={showPassword ? "text" : "password"}
+                            value={formData.confirmPassword}
+                            onChange={handleInputChange}
+                          />
+                          {formData.newPassword &&
+                            formData.confirmPassword &&
+                            formData.newPassword !== formData.confirmPassword && (
+                              <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
+                            )}
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-between border-t px-6 py-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              currentPassword: "",
+                              newPassword: "",
+                              confirmPassword: "",
+                            })
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handlePasswordChange}
+                          disabled={
+                            !formData.currentPassword ||
+                            !formData.newPassword ||
+                            !formData.confirmPassword ||
+                            formData.newPassword !== formData.confirmPassword ||
+                            passwordStrength < 50
+                          }
+                        >
+                          Update Password
+                        </Button>
+                      </CardFooter>
+                    </Card>
+
+                    <div className="space-y-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Two-Factor Authentication</CardTitle>
+                          <CardDescription>Add an extra layer of security to your account</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <div className="font-medium">Two-Factor Authentication</div>
+                              <div className="text-sm text-slate-500">Require a verification code when signing in</div>
+                            </div>
+                            <Switch checked={userData.twoFactorEnabled} />
+                          </div>
+                          <Separator />
+                          <div className="space-y-2">
+                            <h4 className="font-medium">Verification Methods</h4>
+                            <div className="rounded-lg border p-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="rounded-full bg-blue-100 p-2">
+                                    <Smartphone className="h-4 w-4 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <div className="font-medium">Authenticator App</div>
+                                    <div className="text-xs text-slate-500">
+                                      Use an authenticator app to get verification codes
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm">
+                                  Setup
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="rounded-lg border p-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="rounded-full bg-slate-100 p-2">
+                                    <Mail className="h-4 w-4 text-slate-600" />
+                                  </div>
+                                  <div>
+                                    <div className="font-medium">Email</div>
+                                    <div className="text-xs text-slate-500">Receive verification codes via email</div>
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="bg-green-50 text-green-700">
+                                  Active
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Recent Login Activity</CardTitle>
+                          <CardDescription>Monitor where your account is being accessed</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {userData.securityInfo.loginHistory.map((login, index) => (
+                              <div key={index} className="flex items-start gap-3">
+                                <div className="rounded-full bg-slate-100 p-2">
+                                  <Lock className="h-4 w-4 text-slate-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-medium">{login.device}</div>
+                                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                    <span>{login.location}</span>
+                                    <span>•</span>
+                                    <span>
+                                      {new Date(login.date).toLocaleString("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                    {index === 0 && (
+                                      <>
+                                        <span>•</span>
+                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
+                                          Current Session
+                                        </Badge>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                        <CardFooter className="border-t px-6 py-4">
+                          <Button variant="outline" className="w-full">
+                            View All Activity
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Notifications Tab */}
+                <TabsContent value="notifications">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Notification Preferences</CardTitle>
+                      <CardDescription>Manage how and when you receive notifications</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <h3 className="font-medium">Notification Channels</h3>
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <div className="rounded-lg border p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="rounded-full bg-blue-100 p-2">
+                                  <Mail className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div className="font-medium">Email</div>
+                              </div>
+                              <Switch checked={userData.notificationPreferences.email} />
+                            </div>
+                          </div>
+                          <div className="rounded-lg border p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="rounded-full bg-blue-100 p-2">
+                                  <Smartphone className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div className="font-medium">SMS</div>
+                              </div>
+                              <Switch checked={userData.notificationPreferences.sms} />
+                            </div>
+                          </div>
+                          <div className="rounded-lg border p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="rounded-full bg-blue-100 p-2">
+                                  <Bell className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div className="font-medium">In-App</div>
+                              </div>
+                              <Switch checked={userData.notificationPreferences.app} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-4">
+                        <h3 className="font-medium">Notification Types</h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <div className="font-medium">Appointment Reminders</div>
+                              <div className="text-sm text-slate-500">
+                                Notifications about upcoming and changed appointments
+                              </div>
+                            </div>
+                            <Switch checked={userData.notificationPreferences.appointments} />
+                          </div>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <div className="font-medium">System Updates</div>
+                              <div className="text-sm text-slate-500">Important updates about the EHR system</div>
+                            </div>
+                            <Switch checked={userData.notificationPreferences.updates} />
+                          </div>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <div className="font-medium">Marketing & Newsletters</div>
+                              <div className="text-sm text-slate-500">News, features, and promotional content</div>
+                            </div>
+                            <Switch checked={userData.notificationPreferences.marketing} />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-end border-t px-6 py-4">
+                      <Button>Save Preferences</Button>
+                    </CardFooter>
+                  </Card>
+                </TabsContent>
+
+                {/* Preferences Tab */}
+                <TabsContent value="preferences">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Display Preferences</CardTitle>
+                        <CardDescription>Customize how the dashboard appears to you</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Theme</h3>
+                          <RadioGroup
+                            defaultValue={userData.displayPreferences.theme}
+                            className="grid grid-cols-3 gap-4"
+                          >
+                            <div>
+                              <RadioGroupItem value="light" id="theme-light" className="sr-only peer" />
+                              <Label
+                                htmlFor="theme-light"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                              >
+                                <Sun className="mb-3 h-6 w-6" />
+                                <span>Light</span>
+                              </Label>
+                            </div>
+                            <div>
+                              <RadioGroupItem value="dark" id="theme-dark" className="sr-only peer" />
+                              <Label
+                                htmlFor="theme-dark"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                              >
+                                <Moon className="mb-3 h-6 w-6" />
+                                <span>Dark</span>
+                              </Label>
+                            </div>
+                            <div>
+                              <RadioGroupItem value="system" id="theme-system" className="sr-only peer" />
+                              <Label
+                                htmlFor="theme-system"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="mb-3 h-6 w-6"
+                                >
+                                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                                  <line x1="8" x2="16" y1="21" y2="21" />
+                                  <line x1="12" x2="12" y1="17" y2="21" />
+                                </svg>
+                                <span>System</span>
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Color Scheme</h3>
+                          <RadioGroup
+                            defaultValue={userData.displayPreferences.colorScheme}
+                            className="grid grid-cols-3 gap-4"
+                          >
+                            <div>
+                              <RadioGroupItem value="blue" id="color-blue" className="sr-only peer" />
+                              <Label
+                                htmlFor="color-blue"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                              >
+                                <div className="mb-3 h-6 w-6 rounded-full bg-blue-600" />
+                                <span>Blue</span>
+                              </Label>
+                            </div>
+                            <div>
+                              <RadioGroupItem value="green" id="color-green" className="sr-only peer" />
+                              <Label
+                                htmlFor="color-green"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                              >
+                                <div className="mb-3 h-6 w-6 rounded-full bg-green-600" />
+                                <span>Green</span>
+                              </Label>
+                            </div>
+                            <div>
+                              <RadioGroupItem value="purple" id="color-purple" className="sr-only peer" />
+                              <Label
+                                htmlFor="color-purple"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                              >
+                                <div className="mb-3 h-6 w-6 rounded-full bg-purple-600" />
+                                <span>Purple</span>
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <div className="font-medium">Compact Mode</div>
+                              <div className="text-sm text-slate-500">
+                                Reduce spacing and padding throughout the interface
+                              </div>
+                            </div>
+                            <Switch checked={userData.displayPreferences.compactMode} />
+                          </div>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <div className="font-medium">Enable Animations</div>
+                              <div className="text-sm text-slate-500">
+                                Show animations and transitions in the interface
+                              </div>
+                            </div>
+                            <Switch checked={userData.displayPreferences.animations} />
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-end border-t px-6 py-4">
+                        <Button>Save Preferences</Button>
+                      </CardFooter>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Account Management</CardTitle>
+                        <CardDescription>Manage your account settings and data</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Data & Privacy</h3>
+                          <div className="rounded-lg border p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-full bg-blue-100 p-2">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="text-blue-600"
+                                >
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                  <polyline points="7 10 12 15 17 10" />
+                                  <line x1="12" x2="12" y1="15" y2="3" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium">Download Your Data</div>
+                                <div className="text-sm text-slate-500">
+                                  Get a copy of your personal data in a machine-readable format
+                                </div>
+                              </div>
+                              <Button variant="outline" size="sm">
+                                Request
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-4">
+                          <h3 className="font-medium">Danger Zone</h3>
+                          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-full bg-red-100 p-2">
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium">Delete Account</div>
+                                <div className="text-sm text-slate-700">
+                                  Permanently delete your account and all associated data
+                                </div>
+                              </div>
+                              <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                              >
+                                <AlertTriangle className="mr-2 h-4 w-4" />
+                                Deactivate Account
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Deactivate Your Account?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Your account will be temporarily deactivated. You can reactivate it at any time by
+                                  signing in again. During deactivation, your profile will not be visible to others.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction className="bg-red-600 hover:bg-red-700">
+                                  Deactivate
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </motion.div>
+          </motion.div>
+        </main>
+      </div>
+
+      {/* Delete Account Dialog */}
+      <DeleteAccountDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog} />
+    </div>
+  )
+}
