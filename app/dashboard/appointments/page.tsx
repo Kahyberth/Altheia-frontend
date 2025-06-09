@@ -35,14 +35,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { format, addDays, startOfWeek, endOfWeek, parseISO, addWeeks } from "date-fns"
+import { format, addDays, startOfWeek, endOfWeek, parseISO, addWeeks, addMinutes, startOfDay, endOfDay } from "date-fns"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { useMobile } from "@/hooks/use-mobile"
 import { AppointmentDetails } from "@/components/appointment-details"
 import { NewAppointmentDialog } from "@/components/new-appointment-dialog"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { AppointmentCalendarView } from "@/components/appointment-calendar-view"
-import { getAppointments } from "@/services/appointments"
+import { appointmentService, Appointment as BackendAppointment } from "@/services/appointments"
+import { physicianService } from "@/services/physician"
 
 // Sample patient data
 const patients = [
@@ -385,6 +386,53 @@ const auditTrail = [
   },
 ]
 
+// Define types for our frontend data
+interface FrontendAppointment {
+  id: string
+  patientId: string
+  providerId: string
+  date: string
+  startTime: string
+  appointmentType: string
+  status: string
+  locationId: string
+  notes: string
+  createdAt: string
+  updatedAt: string
+  patient?: {
+    id: string
+    name: string
+    age: number
+    gender: string
+    email: string
+    phone: string
+    avatar: string
+  }
+  provider?: {
+    id: string
+    name: string
+    specialty: string
+    avatar: string
+  }
+  typeDetails?: {
+    id: string
+    name: string
+    duration: number
+  }
+  locationDetails?: {
+    id: string
+    name: string
+    address: string
+  }
+}
+
+interface FrontendProvider {
+  id: string
+  name: string
+  specialty: string
+  avatar: string
+}
+
 export default function AppointmentsPage() {
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
@@ -401,68 +449,175 @@ export default function AppointmentsPage() {
   const [locationFilter, setLocationFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [weekStartDate, setWeekStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }))
+  const [appointments, setAppointments] = useState<FrontendAppointment[]>([])
+  const [providers, setProviders] = useState<FrontendProvider[]>([])
 
   useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
+    const fetchData = async () => {
+      try {
+        // Fetch physicians
+        const physicians = await physicianService.getAllPhysicians()
+        const transformedPhysicians = physicians.map((physician) => ({
+          id: physician.physician_id,
+          name: physician.name,
+          specialty: physician.physician_specialty,
+          avatar: "/placeholder.svg?height=128&width=128&text=" + physician.name.split(" ").map(n => n[0]).join(""),
+        }))
+        setProviders(transformedPhysicians)
 
-    return () => clearTimeout(timer)
+        // Fetch appointments for the first physician (you might want to change this based on your requirements)
+        if (transformedPhysicians.length > 0) {
+          const backendAppointments = await appointmentService.getAppointmentsByPhysicianId(transformedPhysicians[0].id)
+          const transformedAppointments = backendAppointments.map((apt: BackendAppointment) => {
+            const dateTime = new Date(apt.date_time)
+            // Calculate age from date_of_birth
+            const birthDate = new Date(apt.Patient.date_of_birth)
+            const age = Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+            
+            return {
+              id: apt.id,
+              patientId: apt.patient_id,
+              providerId: apt.physician_id,
+              date: format(dateTime, "yyyy-MM-dd"),
+              startTime: format(dateTime, "HH:mm"),
+              appointmentType: "consultation", // You might want to add this to your backend
+              status: mapBackendStatus(apt.status),
+              locationId: "main-clinic", // You might want to add this to your backend
+              notes: apt.reason,
+              isVirtual: false, // You might want to add this to your backend
+              createdAt: apt.createdAt,
+              updatedAt: apt.updatedAt,
+              patient: {
+                id: apt.Patient.id,
+                name: apt.patient_name,
+                age: age,
+                gender: apt.patient_gender,
+                email: apt.patient_email,
+                phone: apt.patient_phone,
+                avatar: "/placeholder.svg?height=128&width=128&text=" + apt.patient_name.split(" ").map(n => n[0]).join(""),
+              },
+              provider: {
+                id: apt.Physician.id,
+                name: apt.physician_name,
+                specialty: apt.Physician.physician_specialty,
+                avatar: "/placeholder.svg?height=128&width=128&text=" + apt.physician_name.split(" ").map(n => n[0]).join(""),
+              },
+              typeDetails: {
+                id: "consultation",
+                name: "Consultation",
+                duration: 30,
+              },
+              locationDetails: {
+                id: "main-clinic",
+                name: "Main Clinic",
+                address: "123 Medical Center Dr, Suite 100",
+              },
+            }
+          })
+          setAppointments(transformedAppointments)
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
+
+  // Helper function to map backend status to frontend status
+  const mapBackendStatus = (status: string): string => {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return "scheduled"
+      case "confirmed":
+        return "confirmed"
+      case "in_progress":
+        return "checked-in"
+      case "completed":
+        return "completed"
+      case "cancelled":
+        return "cancelled"
+      default:
+        return "scheduled"
+    }
+  }
+
+  // Helper function to map frontend status to backend status
+  const mapFrontendStatus = (status: string): string => {
+    switch (status.toLowerCase()) {
+      case "scheduled":
+        return "pending"
+      case "confirmed":
+        return "confirmed"
+      case "checked-in":
+        return "in_progress"
+      case "completed":
+        return "completed"
+      case "cancelled":
+        return "cancelled"
+      default:
+        return "pending"
+    }
+  }
 
   useEffect(() => {
     setSidebarOpen(!isMobile)
   }, [isMobile])
 
-
-
-
-  useEffect(() => {
-    getAppointments().then((res) => {
-      console.log(res)
-    })
-  }, [])
-
   // Get appointment details
   const appointmentDetails = useMemo(() => {
     if (!selectedAppointment) return null
-    const appointment = appointments.find((apt) => apt.id === selectedAppointment)
+    const appointment = appointments.find((apt: FrontendAppointment) => apt.id === selectedAppointment)
     if (!appointment) return null
-
-    const patient = patients.find((p) => p.id === appointment.patientId)
-    const provider = providers.find((p) => p.id === appointment.providerId)
-    const type = appointmentTypes.find((t) => t.id === appointment.type)
-    const location = appointmentLocations.find((l) => l.id === appointment.location)
-    const audit = auditTrail.filter((a) => a.appointmentId === appointment.id)
 
     return {
       ...appointment,
-      patient,
-      provider,
-      type,
-      location,
-      audit,
+      type: appointment.typeDetails,
+      location: appointment.locationDetails,
+      audit: auditTrail.filter((a: typeof auditTrail[0]) => a.appointmentId === appointment.id),
     }
-  }, [selectedAppointment])
+  }, [selectedAppointment, appointments])
 
   // Filter appointments based on selected date, search query, and filters
   const filteredAppointments = useMemo(() => {
-    return appointments.filter((appointment) => {
+    console.log('All appointments:', appointments)
+    console.log('Selected date:', selectedDate)
+    console.log('View mode:', viewMode)
+    
+    return appointments.filter((appointment: FrontendAppointment) => {
       // Filter by date based on view mode
       if (viewMode === "day") {
-        if (appointment.date !== format(selectedDate, "yyyy-MM-dd")) return false
+        const appointmentDate = parseISO(appointment.date)
+        const selectedDateStart = startOfDay(selectedDate)
+        const selectedDateEnd = endOfDay(selectedDate)
+        console.log('Day view filtering:', {
+          appointmentId: appointment.id,
+          appointmentDate: appointmentDate,
+          selectedDateStart: selectedDateStart,
+          selectedDateEnd: selectedDateEnd,
+          isInRange: appointmentDate >= selectedDateStart && appointmentDate <= selectedDateEnd
+        })
+        if (appointmentDate < selectedDateStart || appointmentDate > selectedDateEnd) return false
       } else if (viewMode === "week") {
         const appointmentDate = parseISO(appointment.date)
         const weekStart = startOfWeek(weekStartDate, { weekStartsOn: 1 })
         const weekEnd = endOfWeek(weekStartDate, { weekStartsOn: 1 })
+        console.log('Week view filtering:', {
+          appointmentId: appointment.id,
+          appointmentDate: appointmentDate,
+          weekStart: weekStart,
+          weekEnd: weekEnd,
+          isInRange: appointmentDate >= weekStart && appointmentDate <= weekEnd
+        })
         if (appointmentDate < weekStart || appointmentDate > weekEnd) return false
       }
 
       // Filter by search query
       if (searchQuery) {
-        const patient = patients.find((p) => p.id === appointment.patientId)
-        const provider = providers.find((p) => p.id === appointment.providerId)
+        const patient = appointment.patient
+        const provider = appointment.provider
         const searchLower = searchQuery.toLowerCase()
 
         const matchesPatient = patient?.name.toLowerCase().includes(searchLower)
@@ -480,10 +635,10 @@ export default function AppointmentsPage() {
       if (providerFilter !== "all" && appointment.providerId !== providerFilter) return false
 
       // Filter by location
-      if (locationFilter !== "all" && appointment.location !== locationFilter) return false
+      if (locationFilter !== "all" && appointment.locationId !== locationFilter) return false
 
       // Filter by type
-      if (typeFilter !== "all" && appointment.type !== typeFilter) return false
+      if (typeFilter !== "all" && appointment.appointmentType !== typeFilter) return false
 
       return true
     })
@@ -501,8 +656,8 @@ export default function AppointmentsPage() {
 
   // Group appointments by date for list view
   const appointmentsByDate = useMemo(() => {
-    const grouped: Record<string, typeof appointments> = {}
-    filteredAppointments.forEach((appointment) => {
+    const grouped: Record<string, FrontendAppointment[]> = {}
+    filteredAppointments.forEach((appointment: FrontendAppointment) => {
       if (!grouped[appointment.date]) {
         grouped[appointment.date] = []
       }
@@ -563,6 +718,86 @@ export default function AppointmentsPage() {
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+  }
+
+  const handleAppointmentCreated = async () => {
+    console.log('Appointment created, refreshing data...')
+    // Refresh appointments for the current physician
+    if (providers.length > 0) {
+      try {
+        const backendAppointments = await appointmentService.getAppointmentsByPhysicianId(providers[0].id)
+        console.log('Fetched appointments:', backendAppointments)
+        
+        const transformedAppointments = backendAppointments.map((apt: BackendAppointment) => {
+          // Parse the date and time while preserving the timezone
+          const [datePart, timePart] = apt.date_time.split('T')
+          const [year, month, day] = datePart.split('-').map(Number)
+          const [hours, minutes] = timePart.split(':').map(Number)
+          
+          // Create date object with explicit timezone handling
+          const dateTime = new Date(year, month - 1, day, hours, minutes)
+          console.log('Processing appointment:', {
+            id: apt.id,
+            originalDateTime: apt.date_time,
+            parsedDateTime: dateTime,
+            formattedDate: format(dateTime, "yyyy-MM-dd"),
+            formattedTime: format(dateTime, "HH:mm"),
+            hours: hours,
+            minutes: minutes
+          })
+          
+          // Calculate age from date_of_birth
+          const birthDate = new Date(apt.Patient.date_of_birth)
+          const age = Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+          
+          const transformed = {
+            id: apt.id,
+            patientId: apt.patient_id,
+            providerId: apt.physician_id,
+            date: format(dateTime, "yyyy-MM-dd"),
+            startTime: format(dateTime, "HH:mm"), // Keep 24-hour format for internal use
+            appointmentType: apt.reason,
+            status: mapBackendStatus(apt.status),
+            locationId: "main-clinic",
+            notes: apt.reason,
+            createdAt: apt.createdAt,
+            updatedAt: apt.updatedAt,
+            patient: {
+              id: apt.Patient.id,
+              name: apt.patient_name,
+              age: age,
+              gender: apt.patient_gender,
+              email: apt.patient_email,
+              phone: apt.patient_phone,
+              avatar: "/placeholder.svg?height=128&width=128&text=" + apt.patient_name.split(" ").map(n => n[0]).join(""),
+            },
+            provider: {
+              id: apt.Physician.id,
+              name: apt.physician_name,
+              specialty: apt.Physician.physician_specialty,
+              avatar: "/placeholder.svg?height=128&width=128&text=" + apt.physician_name.split(" ").map(n => n[0]).join(""),
+            },
+            typeDetails: {
+              id: "consultation",
+              name: "Consultation",
+              duration: 30,
+            },
+            locationDetails: {
+              id: "main-clinic",
+              name: "Main Clinic",
+              address: "123 Medical Center Dr, Suite 100",
+            },
+          }
+          console.log('Transformed appointment:', transformed)
+          return transformed
+        })
+        
+        console.log('Setting appointments:', transformedAppointments)
+        setAppointments(transformedAppointments)
+      } catch (error) {
+        console.error('Error refreshing appointments:', error)
+      }
+    }
   }
 
   if (isLoading) {
@@ -832,8 +1067,8 @@ export default function AppointmentsPage() {
                                       .map((appointment, index) => {
                                         const patient = patients.find((p) => p.id === appointment.patientId)
                                         const provider = providers.find((p) => p.id === appointment.providerId)
-                                        const type = appointmentTypes.find((t) => t.id === appointment.type)
-                                        const location = appointmentLocations.find((l) => l.id === appointment.location)
+                                        const type = appointmentTypes.find((t) => t.id === appointment.appointmentType)
+                                        const location = appointmentLocations.find((l) => l.id === appointment.locationId)
 
                                         return (
                                           <motion.div
@@ -858,15 +1093,8 @@ export default function AppointmentsPage() {
                                                 <div className="flex items-center justify-between">
                                                   <div className="flex items-center gap-2">
                                                     <h3 className="font-medium">
-                                                      {formatTime(appointment.startTime)} -{" "}
-                                                      {formatTime(appointment.endTime)}
+                                                      {formatTime(appointment.startTime)}
                                                     </h3>
-                                                    {appointment.isVirtual && (
-                                                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                                                        <Video className="mr-1 h-3 w-3" />
-                                                        Virtual
-                                                      </Badge>
-                                                    )}
                                                   </div>
                                                   <Badge
                                                     variant="outline"
@@ -880,30 +1108,30 @@ export default function AppointmentsPage() {
                                                 <div className="flex items-center gap-2">
                                                   <Avatar className="h-6 w-6">
                                                     <AvatarImage
-                                                      src={patient?.avatar || "/placeholder.svg"}
-                                                      alt={patient?.name}
+                                                      src={appointment.patient?.avatar || "/placeholder.svg"}
+                                                      alt={appointment.patient?.name}
                                                     />
                                                     <AvatarFallback>
-                                                      {patient?.name
+                                                      {appointment.patient?.name
                                                         .split(" ")
                                                         .map((n) => n[0])
                                                         .join("")}
                                                     </AvatarFallback>
                                                   </Avatar>
-                                                  <span className="font-medium">{patient?.name}</span>
+                                                  <span className="font-medium">{appointment.patient?.name}</span>
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                                                   <div className="flex items-center gap-1">
                                                     <User className="h-3.5 w-3.5" />
-                                                    <span>{provider?.name}</span>
+                                                    <span>{appointment.provider?.name}</span>
                                                   </div>
                                                   <div className="flex items-center gap-1">
                                                     <FileText className="h-3.5 w-3.5" />
-                                                    <span>{type?.name}</span>
+                                                    <span>{appointment.typeDetails?.name}</span>
                                                   </div>
                                                   <div className="flex items-center gap-1">
                                                     <MapPin className="h-3.5 w-3.5" />
-                                                    <span>{location?.name}</span>
+                                                    <span>{appointment.locationDetails?.name}</span>
                                                   </div>
                                                 </div>
                                                 {appointment.notes && (
@@ -1001,10 +1229,9 @@ export default function AppointmentsPage() {
       <NewAppointmentDialog
         open={showNewAppointmentDialog}
         onOpenChange={setShowNewAppointmentDialog}
-        patients={patients}
-        providers={providers}
         appointmentTypes={appointmentTypes}
         appointmentLocations={appointmentLocations}
+        onAppointmentCreated={handleAppointmentCreated}
       />
 
       {/* Cancel Appointment Confirmation Dialog */}
@@ -1021,11 +1248,18 @@ export default function AppointmentsPage() {
 
 // Helper functions
 function formatTime(time: string) {
-  const [hours, minutes] = time.split(":")
-  const hour = Number.parseInt(hours, 10)
-  const ampm = hour >= 12 ? "PM" : "AM"
-  const formattedHour = hour % 12 || 12
-  return `${formattedHour}:${minutes} ${ampm}`
+  try {
+    // Parse the 24-hour time
+    const [hours, minutes] = time.split(":").map(Number)
+    const date = new Date()
+    date.setHours(hours, minutes)
+    
+    // Format to 12-hour time with AM/PM
+    return format(date, "h:mm a")
+  } catch (error) {
+    console.error('Error formatting time:', error)
+    return time
+  }
 }
 
 function formatStatus(status: string) {

@@ -42,8 +42,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
         <div>
           <CardTitle>Appointment Details</CardTitle>
           <CardDescription>
-            {format(parseISO(appointment.date), "MMMM d, yyyy")} • {formatTime(appointment.startTime)} -{" "}
-            {formatTime(appointment.endTime)}
+            {format(parseISO(appointment.date), "MMMM d, yyyy")} • {formatTime(appointment.startTime)}
           </CardDescription>
         </div>
         <div className="flex gap-2">
@@ -101,9 +100,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <Clock className="h-4 w-4 text-slate-400" />
-                        <p>
-                          {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
-                        </p>
+                        <p>{formatTime(appointment.startTime)}</p>
                       </div>
                     </div>
                     <div>
@@ -348,11 +345,11 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
 
 // Helper functions
 function formatTime(time: string) {
-  const [hours, minutes] = time.split(":")
-  const hour = Number.parseInt(hours, 10)
-  const ampm = hour >= 12 ? "PM" : "AM"
-  const formattedHour = hour % 12 || 12
-  return `${formattedHour}:${minutes} ${ampm}`
+  // time is always in 'HH:mm' 24-hour format
+  const [hours, minutes] = time.split(":").map(Number);
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const formattedHour = hours % 12 || 12;
+  return `${formattedHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
 }
 
 function formatStatus(status: string) {
