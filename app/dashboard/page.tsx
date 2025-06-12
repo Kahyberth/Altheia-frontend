@@ -93,7 +93,7 @@ export default function DashboardPage() {
             transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
             className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
           />
-          <p className="mt-4 text-sm text-slate-600">Loading your dashboard...</p>
+          <p className="mt-4 text-sm text-slate-600">Cargando tu panel...</p>
         </motion.div>
       </div>
     )
@@ -111,7 +111,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle Menu</span>
+              <span className="sr-only">Alternar menú</span>
             </Button>
             <div className="relative w-full max-w-md">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
@@ -127,30 +127,30 @@ export default function DashboardPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
-                  <span className="sr-only">Notifications</span>
+                  <span className="sr-only">Notificaciones</span>
                   <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-blue-600"></span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {[
                   {
-                    title: "New appointment request",
+                    title: "Nueva solicitud de cita",
                     description: "Sarah Johnson requested an appointment for tomorrow at 10:00 AM",
                     time: "10 minutes ago",
                     icon: Calendar,
                     color: "text-blue-600",
                   },
                   {
-                    title: "Lab results available",
+                    title: "Resultados de laboratorio disponibles",
                     description: "New lab results are available for Michael Chen",
                     time: "1 hour ago",
                     icon: FileText,
                     color: "text-green-600",
                   },
                   {
-                    title: "Medication reminder",
+                    title: "Recordatorio de medicación",
                     description: "Reminder to update prescription for Amanda Rodriguez",
                     time: "3 hours ago",
                     icon: Bell,
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer justify-center">
-                  <span className="text-sm font-medium text-blue-600">View all notifications</span>
+                  <span className="text-sm font-medium text-blue-600">Ver todas las notificaciones</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

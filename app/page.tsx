@@ -93,7 +93,7 @@ export default function LandingPage() {
                   <Shield className="absolute inset-0 m-auto text-white h-5 w-5" />
                 </div>
                 <span className="font-bold text-xl text-slate-900">
-                  MediSync
+                  Altheia
                 </span>
               </Link>
             </motion.div>
@@ -110,25 +110,13 @@ export default function LandingPage() {
               href="#features"
               className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
             >
-              Features
-            </Link>
-            <Link
-              href="#testimonials"
-              className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
-            >
-              Testimonials
-            </Link>
-            <Link
-              href="#pricing"
-              className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
-            >
-              Pricing
+              Características
             </Link>
             <Link
               href="#contact"
               className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
             >
-              Contact
+              Contacto
             </Link>
           </motion.nav>
 
@@ -139,11 +127,8 @@ export default function LandingPage() {
               transition={{ delay: 0.4 }}
               className="hidden md:block"
             >
-              <Button variant="outline" className="mr-2">
-                Log in
-              </Button>
               <Button onClick={() => setAuthModalOpen(true)}>
-                Get Started
+                Iniciar Sesión
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </motion.div>
@@ -178,38 +163,21 @@ export default function LandingPage() {
                 className="block text-sm font-medium text-slate-700 hover:text-blue-600"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Features
-              </Link>
-              <Link
-                href="#testimonials"
-                className="block text-sm font-medium text-slate-700 hover:text-blue-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Testimonials
-              </Link>
-              <Link
-                href="#pricing"
-                className="block text-sm font-medium text-slate-700 hover:text-blue-600"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Pricing
+                Características
               </Link>
               <Link
                 href="#contact"
                 className="block text-sm font-medium text-slate-700 hover:text-blue-600"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Contact
+                Contacto
               </Link>
               <div className="pt-4 flex flex-col gap-2">
-                <Button variant="outline" className="w-full justify-center">
-                  Log in
-                </Button>
                 <Button
                   className="w-full justify-center"
                   onClick={() => setAuthModalOpen(true)}
                 >
-                  Get Started
+                  Iniciar Sesión
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </div>
@@ -238,16 +206,13 @@ export default function LandingPage() {
                   variants={item}
                   className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700"
                 >
-                  Elevate Patient Care with Intelligent Health Records
+                  Altheia, tu aliado en la salud
                 </motion.h1>
                 <motion.p
                   variants={item}
                   className="max-w-[600px] text-slate-600 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
                 >
-                  MediSync delivers a premium Electronic Health Record system
-                  designed for modern healthcare providers. Streamline
-                  workflows, enhance patient outcomes, and transform your
-                  practice.
+                  Altheia es una plataforma de salud que te ayuda a gestionar tu clínica de manera eficiente y segura.
                 </motion.p>
                 <motion.div
                   variants={item}
@@ -258,37 +223,9 @@ export default function LandingPage() {
                     className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
                     onClick={() => setAuthModalOpen(true)}
                   >
-                    Get Started
+                    Únete a Altheia
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
-                  <Button size="lg" variant="outline">
-                    View Features
-                  </Button>
-                </motion.div>
-                <motion.div
-                  variants={item}
-                  className="flex items-center gap-4 text-sm"
-                >
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white overflow-hidden bg-slate-300"
-                      >
-                        <Image
-                          src={`/placeholder.svg?height=32&width=32&text=${i}`}
-                          alt={`User ${i}`}
-                          width={32}
-                          height={32}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-slate-600">
-                    <span className="font-medium text-slate-900">500+</span>{" "}
-                    healthcare providers trust MediSync
-                  </p>
                 </motion.div>
               </motion.div>
               <motion.div
@@ -302,7 +239,7 @@ export default function LandingPage() {
               >
                 <div className="relative mx-auto aspect-video max-w-[600px] overflow-hidden rounded-xl bg-slate-100 shadow-2xl">
                   <Image
-                    src="/placeholder.svg?height=600&width=1000&text=EHR+Dashboard"
+                    src="/background.jpg"
                     alt="EHR Dashboard"
                     width={1000}
                     height={600}
@@ -321,9 +258,9 @@ export default function LandingPage() {
                       <CheckCircle2 className="h-6 w-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">HIPAA Compliant</p>
+                      <p className="text-sm font-medium">Seguridad</p>
                       <p className="text-xs text-slate-500">
-                        Enterprise-grade security
+                        Seguridad de datos y privacidad
                       </p>
                     </div>
                   </div>
@@ -344,14 +281,13 @@ export default function LandingPage() {
               className="flex flex-col items-center justify-center space-y-4 text-center mb-12"
             >
               <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                Powerful Features
+                Características
               </span>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                Everything you need in one platform
+                Todo lo que necesitas en una sola plataforma
               </h2>
               <p className="max-w-[700px] text-slate-600 md:text-xl/relaxed">
-                MediSync combines powerful features with an intuitive interface
-                to transform how you manage patient care.
+                Altheia combina características poderosas con una interfaz intuitiva para transformar cómo gestionas la atención médica.
               </p>
             </motion.div>
 
@@ -365,39 +301,39 @@ export default function LandingPage() {
               {[
                 {
                   icon: <Shield className="h-6 w-6 text-blue-600" />,
-                  title: "Enterprise Security",
+                  title: "Seguridad",
                   description:
-                    "HIPAA-compliant infrastructure with end-to-end encryption and advanced access controls.",
+                    "Infraestructura de seguridad de nivel empresarial con cifrado de extremo a extremo y controles de acceso avanzados.",
                 },
                 {
                   icon: <Clock className="h-6 w-6 text-blue-600" />,
-                  title: "Real-time Collaboration",
+                  title: "Colaboración en tiempo real",
                   description:
-                    "Seamlessly collaborate with your team in real-time for better coordination and care.",
+                    "Colabora en tiempo real con tu equipo para una coordinación mejorada y cuidado del paciente.",
                 },
                 {
                   icon: <BarChart3 className="h-6 w-6 text-blue-600" />,
-                  title: "Advanced Analytics",
+                  title: "Análisis avanzados",
                   description:
-                    "Gain insights from comprehensive analytics and reporting to improve patient outcomes.",
+                    "Obtén insights de análisis y reportes para mejorar los resultados del paciente.",
                 },
                 {
                   icon: <Users className="h-6 w-6 text-blue-600" />,
-                  title: "Patient Portal",
+                  title: "Portal de pacientes",
                   description:
-                    "Empower patients with secure access to their health records and communication tools.",
+                    "Empodera a los pacientes con acceso seguro a sus historiales médicos y herramientas de comunicación.",
                 },
                 {
                   icon: <CheckCircle2 className="h-6 w-6 text-blue-600" />,
-                  title: "Automated Workflows",
+                  title: "Flujos automatizados",
                   description:
-                    "Streamline clinical workflows with intelligent automation and customizable templates.",
+                    "Optimiza los flujos clínicos con automatización inteligente y plantillas personalizables.",
                 },
                 {
                   icon: <ArrowRight className="h-6 w-6 text-blue-600" />,
-                  title: "Seamless Integration",
+                  title: "Integración sin complicaciones",
                   description:
-                    "Connect with your existing systems and third-party applications through our API.",
+                    "Conecta con tus sistemas y aplicaciones de terceros a través de nuestra API.",
                 },
               ].map((feature, i) => (
                 <motion.div key={i} variants={featureItem}>
@@ -438,21 +374,20 @@ export default function LandingPage() {
                 className="space-y-6"
               >
                 <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                  Premium Interface
+                  Interfaz Premium
                 </span>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
-                  Designed for efficiency and clarity
+                  Diseñada para eficiencia y claridad
                 </h2>
                 <p className="text-slate-600 md:text-lg">
-                  Our intuitive interface reduces cognitive load and helps
-                  healthcare providers focus on what matters most—patient care.
+                  Nuestra interfaz intuitiva reduce la carga cognitiva y ayuda a los proveedores de atención médica a enfocarse en lo que importa: el cuidado del paciente.
                 </p>
                 <ul className="space-y-4">
                   {[
-                    "Customizable dashboards for different roles",
-                    "Intelligent search across all patient data",
-                    "Dark mode support for reduced eye strain",
-                    "Responsive design for all devices",
+                    "Tableros personalizables para diferentes roles",
+                    "Búsqueda inteligente en todos los datos del paciente",
+                    "Modo oscuro para reducir la fatiga ocular",
+                    "Diseño responsivo para todos los dispositivos",
                   ].map((item, i) => (
                     <motion.li
                       key={i}
@@ -469,7 +404,7 @@ export default function LandingPage() {
                 </ul>
                 <div>
                   <Button variant="outline" className="mt-2">
-                    See the interface in action
+                    Ver la interfaz en acción
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
@@ -483,7 +418,7 @@ export default function LandingPage() {
               >
                 <div className="relative mx-auto overflow-hidden rounded-xl bg-white shadow-2xl">
                   <Image
-                    src="/placeholder.svg?height=600&width=800&text=EHR+Interface"
+                    src="/interfaz.png"
                     alt="EHR Interface"
                     width={800}
                     height={600}
@@ -503,10 +438,10 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">
-                        User-Centered Design
+                        Diseño Centrado en el Usuario
                       </p>
                       <p className="text-xs text-slate-500">
-                        Developed with healthcare providers
+                        Desarrollada con proveedores de atención médica
                       </p>
                     </div>
                   </div>
@@ -527,15 +462,13 @@ export default function LandingPage() {
               className="mx-auto max-w-3xl text-center"
             >
               <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                Get Started Today
+                Únete a Altheia
               </span>
               <h2 className="mt-4 text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                Ready to transform your practice?
+                Listo para transformar tu práctica?
               </h2>
               <p className="mt-4 max-w-[700px] mx-auto text-slate-600 md:text-xl/relaxed">
-                Join hundreds of healthcare providers who have elevated their
-                patient care with MediSync. Schedule a demo to see how we can
-                help your practice.
+                Únete a cientos de proveedores de atención médica que han elevado su atención al paciente con Altheia. Agenda una demostración para ver cómo podemos ayudarte a tu práctica.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                 <motion.div
@@ -547,13 +480,10 @@ export default function LandingPage() {
                     className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
                     onClick={() => setAuthModalOpen(true)}
                   >
-                    Get Started
+                    Únete a Altheia
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </motion.div>
-                <Button size="lg" variant="outline">
-                  Contact Sales
-                </Button>
               </div>
             </motion.div>
           </div>
@@ -571,12 +501,11 @@ export default function LandingPage() {
                   <Shield className="absolute inset-0 m-auto text-white h-5 w-5" />
                 </div>
                 <span className="font-bold text-xl text-slate-900">
-                  MediSync
+                  Altheia
                 </span>
               </Link>
               <p className="text-sm text-slate-600">
-                Transforming healthcare with intelligent electronic health
-                records.
+                Altheia es una plataforma de salud que te ayuda a gestionar tu clínica de manera eficiente y segura.
               </p>
               <div className="flex space-x-4">
                 <Link href="#" className="text-slate-600 hover:text-blue-600">

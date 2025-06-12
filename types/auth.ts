@@ -38,5 +38,34 @@ export interface PatientDto {
   clinic: string;
 }
 
+export enum UserRole {
+  LAB_TECHNICIAN = 'lab_technician',
+  OWNER = 'owner',
+  PATIENT = 'patient',
+  PHYSICIAN = 'physician',
+  RECEPTIONIST = 'receptionist'
+}
+
+export interface Permission {
+  resource: string;
+  actions: string[];
+}
+
+export interface RoleConfig {
+  role: UserRole;
+  name: string;
+  permissions: Permission[];
+  navigationItems: NavigationItem[];
+}
+
+export interface NavigationItem {
+  id: string;
+  label: string;
+  icon: string;
+  href: string;
+  badge?: string;
+  requiredPermissions?: string[];
+}
+
 
 
