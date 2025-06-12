@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Eye, EyeOff, User, LogIn, UserPlus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useRouter } from 'next/navigation';
+import { useAuth } from "@/context/AuthContext"
 
 interface AuthModalProps {
   open: boolean
@@ -21,6 +23,11 @@ interface AuthModalProps {
 export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [selectedEps, setSelectedEps] = useState("")
+  const { login, isLoading, user } = useAuth();
+  const router = useRouter();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -89,10 +96,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   ]
 
   const genderOptions = [
-    { value: "male", label: "Male" },
-    { value: "female", label: "Female" },
-    { value: "other", label: "Other" },
-    { value: "prefer_not_to_say", label: "Prefer not to say" },
+    { value: "male", label: "Hombre" },
+    { value: "female", label: "Mujer" },
   ]
 
   const handleInputChange = (field: string, value: string) => {
@@ -100,7 +105,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
     if (field === "eps") {
       setSelectedEps(value)
-      // Reset clinic selection when EPS changes
       setFormData((prev) => ({ ...prev, clinic: "" }))
     }
   }
@@ -108,14 +112,30 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log("Registration data:", formData)
-    // Handle registration logic here
   }
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle login logic here
-    console.log("Login attempt")
-  }
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+      onOpenChange(false);
+    }
+  }, [user]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    const { email, password } = formData;
+    try {
+      await login(email, password);
+      setIsRedirecting(true);
+
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1000);
+    } catch (err) {
+      setLoginError('Credenciales incorrectas o error de servidor.');
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,20 +143,20 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5 text-blue-600" />
-            Welcome to MediSync
+            Bienvenido a Altheia
           </DialogTitle>
-          <DialogDescription>Sign in to your account or create a new one to get started.</DialogDescription>
+          <DialogDescription>Inicia sesión o crea una nueva cuenta</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login" className="flex items-center gap-2">
               <LogIn className="h-4 w-4" />
-              Login
+              Iniciar Sesión
             </TabsTrigger>
             <TabsTrigger value="register" className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
-              Register
+              Registrarse
             </TabsTrigger>
           </TabsList>
 
@@ -144,7 +164,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">Email</Label>
-                <Input id="login-email" type="email" placeholder="Enter your email" required />
+                <Input id="login-email" type="email" placeholder="Enter your email" required value={formData.email} onChange={e => setFormData(f => ({ ...f, email: e.target.value }))} />
               </div>
 
               <div className="space-y-2">
@@ -155,6 +175,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     required
+                    value={formData.password}
+                    onChange={e => setFormData(f => ({ ...f, password: e.target.value }))}
                   />
                   <Button
                     type="button"
@@ -172,13 +194,15 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full">
-                Sign In
+              {loginError && <div className="text-red-500 text-sm text-center">{loginError}</div>}
+
+              <Button type="submit" className="w-full" disabled={isLoading || isRedirecting}>
+                {isRedirecting ? 'Redirigiendo...' : isLoading ? 'Cargando...' : 'Sign In'}
               </Button>
 
               <div className="text-center">
                 <Button variant="link" className="text-sm text-slate-600">
-                  Forgot your password?
+                  Olvidaste tú contraseña?
                 </Button>
               </div>
             </form>
@@ -188,20 +212,20 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label htmlFor="name">Nombre completo *</Label>
                   <Input
                     id="name"
-                    placeholder="Enter full name"
+                    placeholder="Ingrese su nombre completo"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="document_number">Document Number *</Label>
+                  <Label htmlFor="document_number">Número de documento *</Label>
                   <Input
                     id="document_number"
-                    placeholder="ID number"
+                    placeholder="CC.."
                     value={formData.document_number}
                     onChange={(e) => handleInputChange("document_number", e.target.value)}
                     required
@@ -210,11 +234,11 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
+                <Label htmlFor="email">Dirección de correo eléctronico *</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter email address"
+                  placeholder="Ingrese su correo eléctronico"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   required
@@ -222,12 +246,12 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password *</Label>
+                <Label htmlFor="password">Contraseña *</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a password"
+                    placeholder="Crea una contraseña nueva"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
                     required
@@ -250,10 +274,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender *</Label>
+                  <Label htmlFor="gender">Genero *</Label>
                   <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
                     <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
+                      <SelectValue placeholder="Seleccione un genero" />
                     </SelectTrigger>
                     <SelectContent>
                       {genderOptions.map((option) => (
@@ -265,7 +289,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="date_of_birth">Date of Birth *</Label>
+                  <Label htmlFor="date_of_birth">Fecha de nacimiento *</Label>
                   <Input
                     id="date_of_birth"
                     type="date"
@@ -277,7 +301,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="phone">Número teléfonico *</Label>
                 <Input
                   id="phone"
                   placeholder="+57 320 123 4567"
@@ -288,10 +312,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Address *</Label>
+                <Label htmlFor="address">Dirección residencial *</Label>
                 <Textarea
                   id="address"
-                  placeholder="Enter complete address"
+                  placeholder="Ingres la dirección de su residencia"
                   value={formData.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
                   required
@@ -300,10 +324,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="eps">EPS Provider *</Label>
+                  <Label htmlFor="eps">EPS *</Label>
                   <Select value={formData.eps} onValueChange={(value) => handleInputChange("eps", value)}>
                     <SelectTrigger id="eps">
-                      <SelectValue placeholder="Select EPS" />
+                      <SelectValue placeholder="Seleccione su EPS" />
                     </SelectTrigger>
                     <SelectContent>
                       {epsOptions.map((option) => (
@@ -315,10 +339,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="blood_type">Blood Type</Label>
+                  <Label htmlFor="blood_type">Tipo de sangre</Label>
                   <Select value={formData.blood_type} onValueChange={(value) => handleInputChange("blood_type", value)}>
                     <SelectTrigger id="blood_type">
-                      <SelectValue placeholder="Select blood type" />
+                      <SelectValue placeholder="Seleccione su tipo de sangre" />
                     </SelectTrigger>
                     <SelectContent>
                       {bloodTypes.map((option) => (
@@ -332,14 +356,14 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="clinic">Clinic *</Label>
+                <Label htmlFor="clinic">Clínica *</Label>
                 <Select
                   value={formData.clinic}
                   onValueChange={(value) => handleInputChange("clinic", value)}
                   disabled={!selectedEps}
                 >
                   <SelectTrigger id="clinic" className={!selectedEps ? "opacity-50" : ""}>
-                    <SelectValue placeholder={!selectedEps ? "Select EPS first" : "Select clinic"} />
+                    <SelectValue placeholder={!selectedEps ? "Seleccione una EPS primero" : "Seleccione una clínica"} />
                   </SelectTrigger>
                   <SelectContent>
                     {selectedEps &&
@@ -350,11 +374,11 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                       ))}
                   </SelectContent>
                 </Select>
-                {!selectedEps && <p className="text-xs text-slate-500">Please select an EPS provider first</p>}
+                {!selectedEps && <p className="text-xs text-slate-500">Por favor seleccione una eps primero</p>}
               </div>
 
               <Button type="submit" className="w-full">
-                Create Account
+                Registrarse
               </Button>
 
               <p className="text-xs text-slate-500 text-center">
