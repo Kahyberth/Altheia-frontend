@@ -40,11 +40,18 @@ import { PatientChart } from "@/components/patient-chart"
 import { AppointmentList } from "@/components/appointment-list"
 import { RecentActivity } from "@/components/recent-activity"
 import { AnalyticsOverview } from "@/components/analytics-overview"
+import { getPatientsInClinic, getPersonnelInClinic } from "@/services/clinic.service"
+import { user } from "@heroui/react"
+import { useAuth } from "@/context/AuthContext"
+import { getClinicInformation } from "@/services/clinic.service"
 
 export default function DashboardPage() {
   const isMobile = useMobile()
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
+  const [patients, setPatients] = useState<any[]>([])
+
+  const { user } = useAuth()
 
   useEffect(() => {
     // Simulate data loading
@@ -69,6 +76,19 @@ export default function DashboardPage() {
       },
     },
   }
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      if (!user?.id) return;
+      const clinicRes = await getClinicInformation(user.id);
+      const clinicId =
+        clinicRes.data.clinic?.id ?? clinicRes.data.information?.clinic_id;
+
+      const res = await getPatientsInClinic(clinicId);
+      setPatients(res.data);
+    };
+    fetchPatients();
+  }, [user]);
 
   const item = {
     hidden: { opacity: 0, y: 20 },
@@ -226,7 +246,7 @@ export default function DashboardPage() {
                 {[
                   {
                     title: "Total Patients",
-                    value: "1,284",
+                    value: patients.length,
                     change: "+4.6%",
                     changeType: "positive",
                     icon: Users,

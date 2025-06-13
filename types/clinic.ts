@@ -109,3 +109,49 @@ export interface ClinicEditForm {
   "eps offered": EpsOffered[];
 }
 
+export interface PersonalInClinic {
+    id:              string;
+    name:            string;
+    email:           string;
+    password:        string;
+    rol:             string;
+    phone:           string;
+    document_number: string;
+    status:          boolean;
+    gender:          string;
+    createdAt:       Date;
+    updatedAt:       Date;
+    lastLogin:       Date;
+}
+
+
+
+export interface PatientByClinic {
+    id:            string;
+    user_id:       string;
+    name:          string;
+    date_of_birth: Date;
+    address:       string;
+    eps:           string;
+    blood_type:    string;
+    status:        boolean;
+    clinic_id:     string;
+    createdAt:     Date;
+    updatedAt:     Date;
+    user:          User;
+}
+
+export interface User {
+    id:              string;
+    name:            string;
+    email:           string;
+    password:        string;
+    rol:             string;
+    phone:           string;
+    document_number: string;
+    status:          boolean;
+    gender:          string;
+    createdAt:       Date;
+    updatedAt:       Date;
+    lastLogin:       Date;
+}

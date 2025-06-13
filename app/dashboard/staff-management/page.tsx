@@ -15,6 +15,8 @@ import {
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import StaffManagementLoading from "./loading"
+import { useAuth } from "@/context/AuthContext"
+import { getClinicInformation, getPersonnelInClinic } from "@/services/clinic.service"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,6 +52,7 @@ const FullPageLoader = () => (
 
 export default function StaffManagementPage() {
   const isMobile = useMobile()
+  const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -58,6 +61,7 @@ export default function StaffManagementPage() {
   const [selectedStaffType, setSelectedStaffType] = useState("physician")
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [selectedStaff, setSelectedStaff] = useState(null)
+  const [staffList, setStaffList] = useState<any[]>([])
 
   const handleOpenAddStaff = (type: string) => {
     setSelectedStaffType(type)
@@ -69,92 +73,32 @@ export default function StaffManagementPage() {
     setIsDetailsOpen(true)
   }
 
-  // Mock data for demonstration
-  const staffData = {
-    physicians: [
-      {
-        id: "1",
-        name: "Dr. Carlos Rodríguez",
-        role: "physician",
-        specialty: "Cardiología",
-        email: "carlos.rodriguez@hospital.com",
-        phone: "3161234568",
-        status: "active",
-      },
-      {
-        id: "2",
-        name: "Dra. Ana Martínez",
-        role: "physician",
-        specialty: "Neurología",
-        email: "ana.martinez@hospital.com",
-        phone: "3157894561",
-        status: "active",
-      },
-      {
-        id: "3",
-        name: "Dr. Juan Pérez",
-        role: "physician",
-        specialty: "Pediatría",
-        email: "juan.perez@hospital.com",
-        phone: "3004567890",
-        status: "on_leave",
-      },
-    ],
-    receptionists: [
-      {
-        id: "4",
-        name: "María López",
-        role: "receptionist",
-        email: "maria.lopez@hospital.com",
-        phone: "3101234567",
-        status: "active",
-      },
-      {
-        id: "5",
-        name: "Pedro Gómez",
-        role: "receptionist",
-        email: "pedro.gomez@hospital.com",
-        phone: "3112345678",
-        status: "inactive",
-      },
-    ],
-    laboratory: [
-      {
-        id: "6",
-        name: "Michael Johnson",
-        role: "laboratory",
-        email: "michael@hospital.com",
-        phone: "3201234567",
-        status: "active",
-      },
-      {
-        id: "7",
-        name: "Laura Smith",
-        role: "laboratory",
-        email: "laura.smith@hospital.com",
-        phone: "3153456789",
-        status: "active",
-      },
-    ],
-    patients: [
-      {
-        id: "8",
-        name: "Daniel Zombie",
-        role: "patient",
-        email: "daniel@example.com",
-        phone: "+57 320 123 4567",
-        status: "registered",
-      },
-      {
-        id: "9",
-        name: "Sofia Ramírez",
-        role: "patient",
-        email: "sofia@example.com",
-        phone: "+57 315 987 6543",
-        status: "registered",
-      },
-    ],
-  }
+  // Fetch staff from backend
+  useEffect(() => {
+    const fetchStaff = async () => {
+      if (!user?.id) return
+      try {
+        const clinicRes = await getClinicInformation(user.id)
+        const clinicId = clinicRes.data?.clinic?.id || clinicRes.data?.information?.clinic_id
+        if (!clinicId) throw new Error("No clinic id found")
+        const personnelRes = await getPersonnelInClinic(clinicId)
+        const formatted = (personnelRes.data || []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          role: p.rol,
+          email: p.email,
+          phone: p.phone,
+          status: p.status ? "active" : "inactive",
+        }))
+        setStaffList(formatted)
+      } catch (err) {
+        console.error("Error fetching personnel:", err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchStaff()
+  }, [user])
 
   const roleIcons = {
     physician: <Stethoscope className="h-4 w-4" />,
@@ -178,7 +122,7 @@ export default function StaffManagementPage() {
   }
 
   const getFilteredStaff = () => {
-    let allStaff = [...staffData.physicians, ...staffData.receptionists, ...staffData.laboratory, ...staffData.patients]
+    let allStaff = [...staffList]
 
     if (selectedRole !== "all") {
       allStaff = allStaff.filter((staff) => staff.role === selectedRole)
@@ -218,18 +162,12 @@ export default function StaffManagementPage() {
   }
 
   const statsData = [
-    { title: "Total Staff", value: Object.values(staffData).flat().length, icon: <Users className="h-4 w-4" /> },
-    { title: "Physicians", value: staffData.physicians.length, icon: <Stethoscope className="h-4 w-4" /> },
-    { title: "Receptionists", value: staffData.receptionists.length, icon: <ClipboardList className="h-4 w-4" /> },
-    { title: "Laboratory", value: staffData.laboratory.length, icon: <Flask className="h-4 w-4" /> },
-    { title: "Patients", value: staffData.patients.length, icon: <UserCheck className="h-4 w-4" /> },
+    { title: "Total Staff", value: staffList.length, icon: <Users className="h-4 w-4" /> },
+    { title: "Physicians", value: staffList.filter((s) => s.role === "physician").length, icon: <Stethoscope className="h-4 w-4" /> },
+    { title: "Receptionists", value: staffList.filter((s) => s.role === "receptionist").length, icon: <ClipboardList className="h-4 w-4" /> },
+    { title: "Laboratory", value: staffList.filter((s) => s.role === "laboratory").length, icon: <Flask className="h-4 w-4" /> },
+    { title: "Patients", value: staffList.filter((s) => s.role === "patient").length, icon: <UserCheck className="h-4 w-4" /> },
   ]
-
-  // Simulate data fetching
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200)
-    return () => clearTimeout(timer)
-  }, [])
 
   if (isLoading) {
     return <FullPageLoader />

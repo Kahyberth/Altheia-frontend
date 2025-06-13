@@ -128,7 +128,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
         address: formData.address,
         eps: formData.eps,
         blood_type: formData.blood_type,
-        clinic: formData.clinic,
+        clinic_id: formData.clinic || undefined,
       }
 
       await register(payload as any)

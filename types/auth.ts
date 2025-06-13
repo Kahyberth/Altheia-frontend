@@ -28,14 +28,15 @@ export interface VerfySession {
 export interface PatientDto {
   name: string;
   email: string;
+  password: string;
   gender: string;
   phone: string;
-  documentNumber: string;
-  dateOfBirth: string;
+  document_number: string;
+  date_of_birth: string;
   address: string;
   eps: string;
-  bloodType: string;
-  clinic: string;
+  blood_type: string;
+  clinic_id?: string;
 }
 
 export enum UserRole {
