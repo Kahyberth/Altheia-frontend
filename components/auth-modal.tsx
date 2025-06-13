@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext"
+import { getAllEps, getClinicByEpsServices } from "@/services/clinic.service"
+import { addToast } from "@heroui/react"
 
 interface AuthModalProps {
   open: boolean
@@ -23,7 +25,7 @@ interface AuthModalProps {
 export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [selectedEps, setSelectedEps] = useState("")
-  const { login, isLoading, user } = useAuth();
+  const { login, isLoading, user, register } = useAuth();
   const router = useRouter();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -42,47 +44,50 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     clinic: "",
   })
 
-  const epsOptions = [
-    { value: "salud_total", label: "Salud Total" },
-    { value: "eps_sura", label: "EPS Sura" },
-    { value: "nueva_eps", label: "Nueva EPS" },
-    { value: "sanitas", label: "Sanitas" },
-    { value: "compensar", label: "Compensar" },
-    { value: "famisanar", label: "Famisanar" },
-    { value: "coomeva", label: "Coomeva" },
-  ]
+  
+  const [epsOptions, setEpsOptions] = useState<{ value: string; label: string }[]>([])
+  const [clinicOptions, setClinicOptions] = useState<{ value: string; label: string }[]>([])
 
-  const clinicOptions = {
-    salud_total: [
-      { value: "U7l9sq5o2gpt5opvYw7es", label: "Clínica Salud Total Norte" },
-      { value: "A8m2tr6p3hqu6pqwZx8ft", label: "Clínica Salud Total Sur" },
-      { value: "B9n3us7q4irv7qrxAy9gu", label: "Clínica Salud Total Centro" },
-    ],
-    eps_sura: [
-      { value: "C0o4vt8r5jsw8rsyBz0hv", label: "Clínica Sura Chapinero" },
-      { value: "D1p5wu9s6ktx9stzC10iw", label: "Clínica Sura Zona Rosa" },
-    ],
-    nueva_eps: [
-      { value: "E2q6xv0t7luy0tuaD21jx", label: "Clínica Nueva EPS Principal" },
-      { value: "F3r7yw1u8mvz1uvbE32ky", label: "Clínica Nueva EPS Suba" },
-    ],
-    sanitas: [
-      { value: "G4s8zx2v9nwa2vwcF43lz", label: "Clínica Sanitas La Colina" },
-      { value: "H5t9ay3w0oxb3wxdG54ma", label: "Clínica Sanitas Virrey" },
-    ],
-    compensar: [
-      { value: "I6u0bz4x1pyc4xyeH65nb", label: "Clínica Compensar Kennedy" },
-      { value: "J7v1ca5y2qzd5yzfI76oc", label: "Clínica Compensar Soacha" },
-    ],
-    famisanar: [
-      { value: "K8w2db6z3rae6zagJ87pd", label: "Clínica Famisanar Bosa" },
-      { value: "L9x3ec7a4sbf7abhK98qe", label: "Clínica Famisanar Engativá" },
-    ],
-    coomeva: [
-      { value: "M0y4fd8b5tcg8bciL09rf", label: "Clínica Coomeva Medellín" },
-      { value: "N1z5ge9c6udh9cdjM10sg", label: "Clínica Coomeva Cali" },
-    ],
-  }
+ 
+  useEffect(() => {
+    const fetchEps = async () => {
+      try {
+        const res = await getAllEps(1, 100)
+        const payload = res.data as any
+        const epsList = Array.isArray(payload) ? payload : payload?.data ?? []
+        const options = epsList.map((eps: { id: string; name: string }) => ({
+          value: eps.id,
+          label: eps.name,
+        }))
+        setEpsOptions(options)
+      } catch (error) {
+        console.error("Error al obtener EPS:", error)
+      }
+    }
+    fetchEps()
+  }, [])
+
+  
+  useEffect(() => {
+    if (!selectedEps) {
+      setClinicOptions([])
+      return
+    }
+    const fetchClinics = async () => {
+      try {
+        const res = await getClinicByEpsServices(selectedEps)
+        const clinics = Array.isArray(res.data) ? res.data : []
+        const options = clinics.map((item: any) => ({
+          value: item.clinic?.id ?? item.clinic_information?.clinic_id ?? item.id,
+          label: item.clinic_information?.clinic_name,
+        }))
+        setClinicOptions(options)
+      } catch (error) {
+        console.error("Error al obtener clínicas:", error)
+      }
+    }
+    fetchClinics()
+  }, [selectedEps])
 
   const bloodTypes = [
     { value: "A+", label: "A+" },
@@ -109,9 +114,38 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Registration data:", formData)
+    try {
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        gender: formData.gender,
+        phone: formData.phone,
+        document_number: formData.document_number,
+        date_of_birth: formData.date_of_birth,
+        address: formData.address,
+        eps: formData.eps,
+        blood_type: formData.blood_type,
+        clinic: formData.clinic,
+      }
+
+      await register(payload as any)
+
+      addToast({
+        title: "Registro exitoso",
+        description: "¡Tu cuenta ha sido creada correctamente!",
+      })
+
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Registration error:", error)
+      addToast({
+        title: "Error al registrar",
+        description: "Hubo un problema al crear tu cuenta. Inténtalo nuevamente.",
+      })
+    }
   }
 
   useEffect(() => {
@@ -127,6 +161,12 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     const { email, password } = formData;
     try {
       await login(email, password);
+
+      addToast({
+        title: "Bienvenido",
+        description: "Inicio de sesión exitoso",
+      });
+
       setIsRedirecting(true);
 
       setTimeout(() => {
@@ -134,6 +174,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       }, 1000);
     } catch (err) {
       setLoginError('Credenciales incorrectas o error de servidor.');
+      addToast({
+        title: "Error de inicio de sesión",
+        description: "Revisa tus credenciales e inténtalo nuevamente.",
+      });
     }
   };
 
@@ -366,12 +410,11 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                     <SelectValue placeholder={!selectedEps ? "Seleccione una EPS primero" : "Seleccione una clínica"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedEps &&
-                      clinicOptions[selectedEps as keyof typeof clinicOptions]?.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                    {clinicOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {!selectedEps && <p className="text-xs text-slate-500">Por favor seleccione una eps primero</p>}

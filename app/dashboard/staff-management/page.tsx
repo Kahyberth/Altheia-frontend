@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import {
   Users,
@@ -13,6 +13,8 @@ import {
   FlaskRoundIcon as Flask,
   Menu,
 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import StaffManagementLoading from "./loading"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,9 +26,32 @@ import { StaffDetailsDialog } from "@/components/staff-details-dialog"
 import { useMobile } from "@/hooks/use-mobile"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 
+const FullPageLoader = () => (
+  <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="flex flex-col items-center"
+    >
+      <div className="relative h-12 w-12 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600">
+        <Users className="absolute inset-0 m-auto text-white h-6 w-6" />
+      </div>
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: 150 }}
+        transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
+        className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
+      />
+      <p className="mt-4 text-sm text-slate-600">Cargando personal...</p>
+    </motion.div>
+  </div>
+)
+
 export default function StaffManagementPage() {
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedRole, setSelectedRole] = useState("all")
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false)
@@ -200,6 +225,16 @@ export default function StaffManagementPage() {
     { title: "Patients", value: staffData.patients.length, icon: <UserCheck className="h-4 w-4" /> },
   ]
 
+  // Simulate data fetching
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1200)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return <FullPageLoader />
+  }
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50">
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
@@ -283,6 +318,7 @@ export default function StaffManagementPage() {
                 roleColors={roleColors}
                 statusColors={statusColors}
                 onViewDetails={handleViewDetails}
+                loading={isLoading}
               />
             </CardContent>
           </Card>

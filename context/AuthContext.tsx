@@ -21,6 +21,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  register: (data: PatientDto) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: Props) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

@@ -39,3 +39,7 @@ export const assignClinicServices = async (clinicId: string, serviceIds: string[
     services: serviceIds,
   })
 }
+
+export const getClinicByEpsServices = async (epsId: string) => {
+  return await apiClient.get<ClinicInformation>(`/clinic/by-eps/${epsId}`)
+}
