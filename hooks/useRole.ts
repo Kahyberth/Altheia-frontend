@@ -13,6 +13,7 @@ export function useRole() {
     user,
     role: userRole,
     roleName: user ? RoleService.getRoleName(user.role) : '',
+    clinicId: user?.clinic_id,
     
     
     hasPermission: (resource: string, action: string): boolean => {
