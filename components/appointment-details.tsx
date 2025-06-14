@@ -18,14 +18,15 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format, parseISO } from "date-fns"
+import { FrontendAppointment } from "@/app/dashboard/appointments/page"
 
 interface AppointmentDetailsProps {
-  appointment: any
+  appointment: FrontendAppointment
   onClose: () => void
   onCancel: (appointmentId: string) => void
 }
@@ -41,9 +42,6 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
       <CardHeader className="flex flex-row items-start justify-between pb-3">
         <div>
           <CardTitle>Appointment Details</CardTitle>
-          <CardDescription>
-            {format(parseISO(appointment.date), "MMMM d, yyyy")} • {formatTime(appointment.startTime)}
-          </CardDescription>
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
@@ -54,21 +52,18 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
       </CardHeader>
       <CardContent className="pb-0">
         <Tabs defaultValue="details">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details" className="text-xs sm:text-sm">
               Details
             </TabsTrigger>
             <TabsTrigger value="patient" className="text-xs sm:text-sm">
               Patient
             </TabsTrigger>
-            <TabsTrigger value="history" className="text-xs sm:text-sm">
-              Audit Trail
-            </TabsTrigger>
           </TabsList>
           <div className="mt-4">
             <TabsContent value="details">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-end">
                   <Badge
                     variant="outline"
                     className={`${getAppointmentStatusStyles(appointment.status).badgeBgColor} ${
@@ -77,16 +72,6 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
                   >
                     {formatStatus(appointment.status)}
                   </Badge>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="h-8 gap-1">
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Message</span>
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 gap-1">
-                      <Phone className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Call</span>
-                    </Button>
-                  </div>
                 </div>
 
                 <div className="rounded-lg border p-4">
@@ -107,11 +92,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
                       <p className="text-sm font-medium text-slate-500">Type</p>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-slate-400" />
-                        <p>{appointment.type?.name}</p>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Clock className="h-4 w-4 text-slate-400" />
-                        <p>{appointment.type?.duration} minutes</p>
+                        <p>{appointment.appointmentType}</p>
                       </div>
                     </div>
                     <div>
@@ -128,16 +109,11 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
                     <div>
                       <p className="text-sm font-medium text-slate-500">Location</p>
                       <div className="flex items-center gap-2">
-                        {appointment.isVirtual ? (
-                          <Video className="h-4 w-4 text-slate-400" />
-                        ) : (
-                          <MapPin className="h-4 w-4 text-slate-400" />
-                        )}
-                        <p>{appointment.location?.name}</p>
+                        <p>{appointment.locationDetails?.name}</p>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <MapPin className="h-4 w-4 text-slate-400" />
-                        <p>{appointment.location?.address}</p>
+                        <p>{appointment.locationDetails?.address}</p>
                       </div>
                     </div>
                   </div>
@@ -190,10 +166,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
                       alt={appointment.patient?.name}
                     />
                     <AvatarFallback>
-                      {appointment.patient?.name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")}
+                      {appointment.patient?.name?.split(" ").map((n: string) => n[0]).join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -293,39 +266,6 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
                 </div>
               </div>
             </TabsContent>
-            <TabsContent value="history">
-              {appointment.audit && appointment.audit.length > 0 ? (
-                <div className="space-y-3">
-                  {appointment.audit.map((entry: any, index: number) => (
-                    <div key={index} className="flex items-start gap-3 rounded-lg border p-3">
-                      <div
-                        className={`rounded-full p-2 ${getAuditActionStyles(entry.action).bgColor} ${
-                          getAuditActionStyles(entry.action).textColor
-                        }`}
-                      >
-                        {getAuditActionIcon(entry.action)}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{entry.user}</p>
-                        <p className="text-sm text-slate-600">{entry.details}</p>
-                        <p className="text-xs text-slate-500">
-                          {format(parseISO(entry.timestamp), "MMM d, yyyy")} at{" "}
-                          {format(parseISO(entry.timestamp), "h:mm a")}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="rounded-full bg-slate-100 p-3">
-                    <History className="h-6 w-6 text-slate-400" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-medium">No audit trail</h3>
-                  <p className="mt-1 text-sm text-slate-500">No activity has been recorded for this appointment yet.</p>
-                </div>
-              )}
-            </TabsContent>
           </div>
         </Tabs>
       </CardContent>
@@ -336,7 +276,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
         </div>
         <div className="flex items-center gap-1 text-xs text-slate-500">
           <History className="h-3.5 w-3.5" />
-          <span>Last updated: {format(parseISO(appointment.updatedAt), "MMM d, yyyy h:mm a")}</span>
+          <span>Last updated: {appointment.updatedAt ? format(parseISO(appointment.updatedAt), "MMM d, yyyy h:mm a") : "N/A"}</span>
         </div>
       </CardFooter>
     </Card>
@@ -366,36 +306,6 @@ function formatStatus(status: string) {
       return "Cancelled"
     default:
       return status
-  }
-}
-
-function getAuditActionIcon(action: string) {
-  switch (action) {
-    case "status_update":
-      return <RefreshCw className="h-4 w-4" />
-    case "create":
-      return <Calendar className="h-4 w-4" />
-    case "update":
-      return <FileText className="h-4 w-4" />
-    case "delete":
-      return <X className="h-4 w-4" />
-    default:
-      return <History className="h-4 w-4" />
-  }
-}
-
-function getAuditActionStyles(action: string) {
-  switch (action) {
-    case "status_update":
-      return { bgColor: "bg-blue-100", textColor: "text-blue-600" }
-    case "create":
-      return { bgColor: "bg-green-100", textColor: "text-green-600" }
-    case "update":
-      return { bgColor: "bg-amber-100", textColor: "text-amber-600" }
-    case "delete":
-      return { bgColor: "bg-red-100", textColor: "text-red-600" }
-    default:
-      return { bgColor: "bg-slate-100", textColor: "text-slate-600" }
   }
 }
 

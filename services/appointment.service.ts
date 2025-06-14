@@ -34,8 +34,8 @@ export interface Appointment {
   date_time: string;
   status: string;
   reason: string;
-  Patient: Patient;
-  Physician: {
+  patient: Patient;
+  physician: {
     id: string;
     user_id: string;
     physician_specialty: string;
@@ -55,6 +55,10 @@ export interface Appointment {
   physician_gender: string;
   physician_email: string;
   physician_phone: string;
+  clinic_name: string;
+  clinic_city: string;
+  clinic_address: string;
+  clinic_id: string;
 }
 
 export const appointmentService = {
@@ -70,7 +74,6 @@ export const appointmentService = {
       const data = response.data;
       if (!Array.isArray(data)) {
         console.error('Expected array of appointments but got:', data);
-        return [];
       }
       console.log('Fetched appointments:', data.length, 'appointments found');
       return data;
@@ -94,6 +97,26 @@ export const appointmentService = {
       return response.data;
     } catch (error) {
       console.error('Error creating appointment:', error);
+      throw error;
+    }
+  },
+
+  updateStatus: async (appointmentId: string, status: string): Promise<Appointment> => {
+    try {
+      const response = await apiClient.put(`/appointments/updateStatus/${appointmentId}`, { status });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      throw error;
+    }
+  },
+
+  cancelAppointment: async (appointmentId: string): Promise<Appointment> => {
+    try {
+      const response = await apiClient.patch(`/appointments/cancel/${appointmentId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error canceling appointment:', error);
       throw error;
     }
   }

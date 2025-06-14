@@ -187,6 +187,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden dark:bg-slate-800 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+        <DialogTitle className="sr-only">Authentication</DialogTitle>
         <div className="relative">
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-900" />

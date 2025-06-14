@@ -22,10 +22,10 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { appointmentService } from "@/services/appointments"
+import { appointmentService } from "@/services/appointment.service"
 import { physicianService } from "@/services/physician"
 import { patientService } from "@/services/patients"
-import { Physician, Patient } from "@/services/appointments"
+import { Physician, Patient } from "@/services/appointment.service"
 
 interface NewAppointmentDialogProps {
   open: boolean

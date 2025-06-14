@@ -17,6 +17,7 @@ import {
   Phone,
   Clock,
   AlertCircle,
+  X,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -38,160 +39,42 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { useMobile } from "@/hooks/use-mobile"
 import { PatientAddDialog } from "@/components/patient-add-dialog"
+import { PatientData, PatientPaginated } from "@/services/patients"
+import { patientService } from "@/services/patients"
 import { useAuth } from "@/context/AuthContext"
 import { getClinicInformation, getPatientsInClinic } from "@/services/clinic.service"
 
-// Rename constant definition at top
-const samplePatients = [
-  {
-    id: "P-1001",
-    name: "Sarah Johnson",
-    age: 42,
-    gender: "Female",
-    email: "sarah.johnson@example.com",
-    phone: "(555) 123-4567",
-    address: "123 Main St, Anytown, CA 94321",
-    lastVisit: "2023-05-10",
-    nextAppointment: "2023-05-24",
-    status: "Active",
-    conditions: ["Hypertension", "Type 2 Diabetes"],
-    avatar: "/placeholder.svg?height=128&width=128&text=SJ",
-    insurance: "Blue Cross Blue Shield",
-    bloodType: "A+",
-    allergies: ["Penicillin", "Peanuts"],
-  },
-  {
-    id: "P-1002",
-    name: "Michael Chen",
-    age: 35,
-    gender: "Male",
-    email: "michael.chen@example.com",
-    phone: "(555) 987-6543",
-    address: "456 Oak Ave, Somewhere, NY 10001",
-    lastVisit: "2023-05-15",
-    nextAppointment: "2023-06-01",
-    status: "Active",
-    conditions: ["Asthma"],
-    avatar: "/placeholder.svg?height=128&width=128&text=MC",
-    insurance: "Aetna",
-    bloodType: "O-",
-    allergies: ["Sulfa drugs"],
-  },
-  {
-    id: "P-1003",
-    name: "Amanda Rodriguez",
-    age: 28,
-    gender: "Female",
-    email: "amanda.rodriguez@example.com",
-    phone: "(555) 456-7890",
-    address: "789 Pine St, Elsewhere, TX 75001",
-    lastVisit: "2023-04-20",
-    nextAppointment: "2023-05-20",
-    status: "Active",
-    conditions: ["Migraine", "Anxiety"],
-    avatar: "/placeholder.svg?height=128&width=128&text=AR",
-    insurance: "UnitedHealthcare",
-    bloodType: "B+",
-    allergies: ["Latex"],
-  },
-  {
-    id: "P-1004",
-    name: "David Wilson",
-    age: 65,
-    gender: "Male",
-    email: "david.wilson@example.com",
-    phone: "(555) 789-0123",
-    address: "101 Maple Dr, Nowhere, FL 33101",
-    lastVisit: "2023-05-05",
-    nextAppointment: "2023-05-26",
-    status: "Critical",
-    conditions: ["Coronary Artery Disease", "COPD", "Hypertension"],
-    avatar: "/placeholder.svg?height=128&width=128&text=DW",
-    insurance: "Medicare",
-    bloodType: "AB+",
-    allergies: ["Aspirin", "Ibuprofen"],
-  },
-  {
-    id: "P-1005",
-    name: "Emily Thompson",
-    age: 31,
-    gender: "Female",
-    email: "emily.thompson@example.com",
-    phone: "(555) 234-5678",
-    address: "202 Cedar Ln, Anyplace, WA 98001",
-    lastVisit: "2023-05-12",
-    nextAppointment: "2023-06-10",
-    status: "Active",
-    conditions: ["Hypothyroidism"],
-    avatar: "/placeholder.svg?height=128&width=128&text=ET",
-    insurance: "Cigna",
-    bloodType: "O+",
-    allergies: [],
-  },
-  {
-    id: "P-1006",
-    name: "James Brown",
-    age: 52,
-    gender: "Male",
-    email: "james.brown@example.com",
-    phone: "(555) 345-6789",
-    address: "303 Birch Rd, Somewhere, IL 60601",
-    lastVisit: "2023-04-28",
-    nextAppointment: "2023-05-28",
-    status: "Inactive",
-    conditions: ["Osteoarthritis", "Hyperlipidemia"],
-    avatar: "/placeholder.svg?height=128&width=128&text=JB",
-    insurance: "Humana",
-    bloodType: "A-",
-    allergies: ["Codeine"],
-  },
-  {
-    id: "P-1007",
-    name: "Sophia Lee",
-    age: 45,
-    gender: "Female",
-    email: "sophia.lee@example.com",
-    phone: "(555) 456-7890",
-    address: "404 Elm St, Elsewhere, GA 30301",
-    lastVisit: "2023-05-08",
-    nextAppointment: "2023-06-05",
-    status: "Active",
-    conditions: ["Rheumatoid Arthritis"],
-    avatar: "/placeholder.svg?height=128&width=128&text=SL",
-    insurance: "Kaiser Permanente",
-    bloodType: "B-",
-    allergies: ["Shellfish"],
-  },
-  {
-    id: "P-1008",
-    name: "Robert Garcia",
-    age: 38,
-    gender: "Male",
-    email: "robert.garcia@example.com",
-    phone: "(555) 567-8901",
-    address: "505 Walnut Ave, Nowhere, AZ 85001",
-    lastVisit: "2023-05-02",
-    nextAppointment: "2023-06-02",
-    status: "Active",
-    conditions: ["Depression", "Insomnia"],
-    avatar: "/placeholder.svg?height=128&width=128&text=RG",
-    insurance: "Anthem",
-    bloodType: "O+",
-    allergies: ["Tetracycline"],
-  },
-]
+interface EnhancedPatient extends PatientData {
+  avatar: string;
+  conditions: string[];
+  lastVisit: string;
+  insurance: string;
+  allergies: string[];
+}
 
 export default function PatientsPage() {
   const isMobile = useMobile()
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
   const [isLoading, setIsLoading] = useState(true)
-  const [patients, setPatients] = useState<any[]>(samplePatients)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [showAddPatientDialog, setShowAddPatientDialog] = useState(false)
+  const [patients, setPatients] = useState<EnhancedPatient[]>([])
+  const [sortConfig, setSortConfig] = useState<{ key: keyof EnhancedPatient; direction: 'asc' | 'desc' }>({
+    key: 'name',
+    direction: 'asc'
+  })
+  const [genderFilters, setGenderFilters] = useState<{ male: boolean; female: boolean }>({
+    male: false,
+    female: false,
+  })
+  const [ageRange, setAgeRange] = useState<{ min: string; max: string }>({
+    min: "",
+    max: "",
+  })
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -206,20 +89,25 @@ export default function PatientsPage() {
           const age = dob ? Math.floor((Date.now() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25)) : undefined
           return {
             id: p.id,
+            user_id: p.user_id,
             name: p.user?.name || p.name,
-            age,
+            date_of_birth: p.date_of_birth,
+            address: p.address,
             gender: p.user?.gender || p.gender,
             email: p.user?.email,
             phone: p.user?.phone,
-            address: p.address,
-            lastVisit: "-",
-            nextAppointment: "-",
-            status: p.status ? "Active" : "Inactive",
-            conditions: [],
-            avatar: undefined,
-            insurance: "-",
-            bloodType: p.blood_type,
-            allergies: [],
+            next_appointment: p.next_appointment || "-",
+            eps: p.eps || "-",
+            blood_type: p.blood_type,
+            status: p.user.status,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt,
+            // EnhancedPatient properties
+            avatar: p.avatar || "/placeholder.svg",
+            conditions: p.conditions || [],
+            lastVisit: p.lastVisit || "-",
+            insurance: p.insurance || "-",
+            allergies: p.allergies || []
           }
         })
         setPatients(mapped)
@@ -236,16 +124,49 @@ export default function PatientsPage() {
     setSidebarOpen(!isMobile)
   }, [isMobile])
 
-  // Filter patients based on search query and status
+  // Filter patients based on search query, status, gender, and age range
   const filteredPatients = patients.filter((patient) => {
     const matchesSearch =
       patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patient.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patient.email.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesStatus = selectedStatus === "all" || patient.status.toLowerCase() === selectedStatus.toLowerCase()
+    const matchesStatus = selectedStatus === "all" || (patient.status ? "active" : "inactive") === selectedStatus
 
-    return matchesSearch && matchesStatus
+    const matchesGender = 
+      (!genderFilters.male && !genderFilters.female) || // If no gender filters are selected, show all
+      (genderFilters.male && patient.gender.toLowerCase() === "male") ||
+      (genderFilters.female && patient.gender.toLowerCase() === "female")
+
+    const patientAge = new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()
+    const matchesAgeRange =
+      (!ageRange.min || patientAge >= parseInt(ageRange.min)) &&
+      (!ageRange.max || patientAge <= parseInt(ageRange.max))
+
+    return matchesSearch && matchesStatus && matchesGender && matchesAgeRange
+  })
+
+  // Sort patients based on sortConfig
+  const sortedPatients = [...filteredPatients].sort((a, b) => {
+    if (sortConfig.key === 'name' || sortConfig.key === 'email' || sortConfig.key === 'id') {
+      return sortConfig.direction === 'asc' 
+        ? a[sortConfig.key].localeCompare(b[sortConfig.key])
+        : b[sortConfig.key].localeCompare(a[sortConfig.key])
+    }
+    
+    if (sortConfig.key === 'date_of_birth') {
+      const ageA = new Date().getFullYear() - new Date(a[sortConfig.key]).getFullYear()
+      const ageB = new Date().getFullYear() - new Date(b[sortConfig.key]).getFullYear()
+      return sortConfig.direction === 'asc' ? ageA - ageB : ageB - ageA
+    }
+
+    if (sortConfig.key === 'status') {
+      return sortConfig.direction === 'asc'
+        ? (a[sortConfig.key] === b[sortConfig.key] ? 0 : a[sortConfig.key] ? -1 : 1)
+        : (a[sortConfig.key] === b[sortConfig.key] ? 0 : a[sortConfig.key] ? 1 : -1)
+    }
+
+    return 0
   })
 
   const container = {
@@ -345,14 +266,26 @@ export default function PatientsPage() {
                         <div className="mb-2 space-y-1">
                           <label className="text-xs font-medium dark:text-white">Gender</label>
                           <div className="flex items-center space-x-2">
-                            <Checkbox id="gender-male" />
-                            <label htmlFor="gender-male" className="text-sm dark:text-white">
+                            <Checkbox 
+                              id="male" 
+                              checked={genderFilters.male}
+                              onCheckedChange={(checked) => 
+                                setGenderFilters(prev => ({ ...prev, male: checked as boolean }))
+                              }
+                            />
+                            <label htmlFor="male" className="text-sm">
                               Male
                             </label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Checkbox id="gender-female" />
-                            <label htmlFor="gender-female" className="text-sm dark:text-white">
+                            <Checkbox 
+                              id="female" 
+                              checked={genderFilters.female}
+                              onCheckedChange={(checked) => 
+                                setGenderFilters(prev => ({ ...prev, female: checked as boolean }))
+                              }
+                            />
+                            <label htmlFor="female" className="text-sm">
                               Female
                             </label>
                           </div>
@@ -360,13 +293,32 @@ export default function PatientsPage() {
                         <div className="mb-2 space-y-1">
                           <label className="text-xs font-medium dark:text-white">Age Range</label>
                           <div className="grid grid-cols-2 gap-2">
-                            <Input type="number" placeholder="Min" className="h-8 dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
-                            <Input type="number" placeholder="Max" className="h-8 dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
+                            <Input 
+                              type="number" 
+                              placeholder="Min" 
+                              className="h-8"
+                              value={ageRange.min}
+                              onChange={(e) => setAgeRange(prev => ({ ...prev, min: e.target.value }))}
+                            />
+                            <Input 
+                              type="number" 
+                              placeholder="Max" 
+                              className="h-8"
+                              value={ageRange.max}
+                              onChange={(e) => setAgeRange(prev => ({ ...prev, max: e.target.value }))}
+                            />
                           </div>
                         </div>
                         <div className="pt-2">
-                          <Button size="sm" className="w-full">
-                            Apply Filters
+                          <Button 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => {
+                              setGenderFilters({ male: false, female: false })
+                              setAgeRange({ min: "", max: "" })
+                            }}
+                          >
+                            Clear Filters
                           </Button>
                         </div>
                       </div>
@@ -441,15 +393,116 @@ export default function PatientsPage() {
                   Showing <span className="font-medium">{filteredPatients.length}</span> patients
                 </p>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="h-8 gap-1 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700">
-                    <SlidersHorizontal className="h-3.5 w-3.5" />
-                    <span>Sort</span>
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-8 gap-1 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700">
-                    <Download className="h-3.5 w-3.5" />
-                    <span>Export</span>
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 gap-1 bg-white">
+                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                        <span>Sort</span>
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => setSortConfig({ key: 'name', direction: 'asc' })}
+                        className={sortConfig.key === 'name' && sortConfig.direction === 'asc' ? 'bg-slate-100' : ''}
+                      >
+                        Name (A-Z)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setSortConfig({ key: 'name', direction: 'desc' })}
+                        className={sortConfig.key === 'name' && sortConfig.direction === 'desc' ? 'bg-slate-100' : ''}
+                      >
+                        Name (Z-A)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setSortConfig({ key: 'date_of_birth', direction: 'asc' })}
+                        className={sortConfig.key === 'date_of_birth' && sortConfig.direction === 'asc' ? 'bg-slate-100' : ''}
+                      >
+                        Age (Youngest first)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setSortConfig({ key: 'date_of_birth', direction: 'desc' })}
+                        className={sortConfig.key === 'date_of_birth' && sortConfig.direction === 'desc' ? 'bg-slate-100' : ''}
+                      >
+                        Age (Oldest first)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setSortConfig({ key: 'status', direction: 'asc' })}
+                        className={sortConfig.key === 'status' && sortConfig.direction === 'asc' ? 'bg-slate-100' : ''}
+                      >
+                        Status (Active first)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setSortConfig({ key: 'status', direction: 'desc' })}
+                        className={sortConfig.key === 'status' && sortConfig.direction === 'desc' ? 'bg-slate-100' : ''}
+                      >
+                        Status (Inactive first)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 gap-1 bg-white">
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Export</span>
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={async () => {
+                        try {
+                          const blob = await patientService.exportAllPatients();
+                          if (!blob || blob.size === 0) {
+                            throw new Error('No data received from server');
+                          }
+                          console.log(blob);
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'all-patients.xlsx';
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                        } catch (error) {
+                          console.error('Export failed:', error);
+                          
+                          alert('Error al exportar los pacientes. Por favor, intente nuevamente.');
+                        }
+                      }}>
+                        <Download className="mr-2 h-4 w-4" />
+                        <span>All Patients</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={async () => {
+                        try {
+                          const blob = await patientService.exportSelectedPatients(
+                            sortedPatients.map(patient => patient.id)
+                          );
+                          if (!blob || blob.size === 0) {
+                            throw new Error('No data received from server');
+                          }
+                          const url = window.URL.createObjectURL(new Blob([blob], { 
+                            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                          }));
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'selected-patients.xlsx';
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                        } catch (error) {
+                          console.error('Export failed:', error);
+                          alert('Error al exportar los pacientes seleccionados. Por favor, intente nuevamente.');
+                        }
+                      }}>
+                        <Download className="mr-2 h-4 w-4" />
+                        <span>Filtered Patients</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </motion.div>
@@ -460,7 +513,7 @@ export default function PatientsPage() {
                 variants={item}
                 className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
               >
-                {filteredPatients.map((patient) => (
+                {sortedPatients.map((patient) => (
                   <motion.div key={patient.id} whileHover={{ y: -5, transition: { duration: 0.2 } }} className="h-full">
                     <Card
                       className={`h-full cursor-pointer overflow-hidden transition-all hover:shadow-md dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-slate-700/50 ${
@@ -472,32 +525,22 @@ export default function PatientsPage() {
                         <div className="relative">
                           <div
                             className={`absolute inset-0 bg-gradient-to-b ${
-                              patient.status === "Active"
+                              patient.status
                                 ? "from-blue-500/20 to-blue-600/20"
-                                : patient.status === "Critical"
-                                  ? "from-red-500/20 to-red-600/20"
-                                  : "from-slate-400/20 to-slate-500/20"
+                                : "from-slate-400/20 to-slate-500/20"
                             }`}
                           />
                           <div className="p-4">
                             <div className="flex items-center justify-between">
                               <Badge
-                                variant={
-                                  patient.status === "Active"
-                                    ? "outline"
-                                    : patient.status === "Critical"
-                                      ? "destructive"
-                                      : "secondary"
-                                }
+                                variant={patient.status ? "outline" : "secondary"}
                                 className={
-                                  patient.status === "Active"
+                                  patient.status
                                     ? "bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
-                                    : patient.status === "Critical"
-                                      ? ""
-                                      : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
+                                    : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
                                 }
                               >
-                                {patient.status}
+                                {patient.status ? "active" : "inactive"}
                               </Badge>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -528,7 +571,7 @@ export default function PatientsPage() {
                             </Avatar>
                             <h3 className="mt-3 text-lg font-semibold dark:text-white">{patient.name}</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                              {patient.age} • {patient.gender}
+                              {new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()} years • {patient.gender}
                             </p>
                             <p className="mt-1 text-xs font-medium text-slate-400 dark:text-slate-500">{patient.id}</p>
                           </div>
@@ -548,12 +591,12 @@ export default function PatientsPage() {
                               <div className="flex flex-col">
                                 <span className="text-xs dark:text-slate-300">Next Appointment</span>
                                 <span className="text-xs font-medium dark:text-slate-200">
-                                  {new Date(patient.nextAppointment).toLocaleDateString()}
+                                  {patient.next_appointment ? new Date(patient.next_appointment).toLocaleDateString() : "No upcoming appointments"}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          {patient.conditions.length > 0 && (
+                          {patient.conditions && patient.conditions.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-1">
                               {patient.conditions.map((condition: string, index: number) => (
                                 <Badge key={index} variant="secondary" className="bg-slate-100 text-xs dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
@@ -584,7 +627,7 @@ export default function PatientsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredPatients.map((patient, index) => (
+                      {sortedPatients.map((patient, index) => (
                         <motion.tr
                           key={patient.id}
                           className={`border-b transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700 ${
@@ -610,7 +653,7 @@ export default function PatientsPage() {
                               <div>
                                 <p className="font-medium dark:text-white">{patient.name}</p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                  {patient.age} • {patient.gender}
+                                  {new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()} years • {patient.gender}
                                 </p>
                               </div>
                             </div>
@@ -622,29 +665,21 @@ export default function PatientsPage() {
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">
                             <Badge
-                              variant={
-                                patient.status === "Active"
-                                  ? "outline"
-                                  : patient.status === "Critical"
-                                    ? "destructive"
-                                    : "secondary"
-                              }
+                              variant={patient.status ? "outline" : "secondary"}
                               className={
-                                patient.status === "Active"
+                                patient.status
                                   ? "bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
-                                  : patient.status === "Critical"
-                                    ? ""
-                                    : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
+                                  : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
                               }
                             >
-                              {patient.status}
+                              {patient.status ? "active" : "inactive"}
                             </Badge>
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm dark:text-slate-300">
-                            {new Date(patient.lastVisit).toLocaleDateString()}
+                            {patient.lastVisit ? new Date(patient.lastVisit).toLocaleDateString() : "No visits yet"}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm dark:text-slate-300">
-                            {new Date(patient.nextAppointment).toLocaleDateString()}
+                            {patient.next_appointment ? new Date(patient.next_appointment).toLocaleDateString() : "No upcoming appointments"}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-right">
                             <DropdownMenu>
@@ -684,7 +719,12 @@ export default function PatientsPage() {
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   We couldn't find any patients matching your search criteria.
                 </p>
-                <Button className="mt-4" onClick={() => setSearchQuery("")}>
+                <Button className="mt-4" onClick={() => {
+                  setSearchQuery("")
+                  setGenderFilters({ male: false, female: false })
+                  setSelectedStatus("all")
+                  setViewMode("grid")
+                }}>
                   Clear Filters
                 </Button>
               </motion.div>
@@ -708,8 +748,8 @@ export default function PatientsPage() {
 }
 
 interface PatientDetailViewProps {
-  patient: any
-  onClose: () => void
+  patient: EnhancedPatient;
+  onClose: () => void;
 }
 
 function PatientDetailView({ patient, onClose }: PatientDetailViewProps) {
@@ -742,22 +782,18 @@ function PatientDetailView({ patient, onClose }: PatientDetailViewProps) {
           </Avatar>
           <h1 className="mt-4 text-2xl font-bold">{patient.name}</h1>
           <p className="text-slate-500">
-            {patient.age} • {patient.gender} • {patient.bloodType}
+            {new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()} years • {patient.gender} • {patient.blood_type}
           </p>
           <div className="mt-2 flex items-center gap-2">
             <Badge
-              variant={
-                patient.status === "Active" ? "outline" : patient.status === "Critical" ? "destructive" : "secondary"
-              }
+              variant={patient.status ? "outline" : "secondary"}
               className={
-                patient.status === "Active"
+                patient.status
                   ? "bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700"
-                  : patient.status === "Critical"
-                    ? ""
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700"
               }
             >
-              {patient.status}
+              {patient.status ? "active" : "inactive"}
             </Badge>
             <span className="text-sm text-slate-500">Patient ID: {patient.id}</span>
           </div>
@@ -844,7 +880,7 @@ function PatientDetailView({ patient, onClose }: PatientDetailViewProps) {
                   <div className="mb-4">
                     <h3 className="mb-2 font-medium">Conditions</h3>
                     <div className="flex flex-wrap gap-2">
-                      {patient.conditions.length > 0 ? (
+                      {patient.conditions && patient.conditions.length > 0 ? (
                         patient.conditions.map((condition: string, index: number) => (
                           <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700">
                             {condition}
@@ -859,7 +895,7 @@ function PatientDetailView({ patient, onClose }: PatientDetailViewProps) {
                   <div className="mb-4">
                     <h3 className="mb-2 font-medium">Allergies</h3>
                     <div className="flex flex-wrap gap-2">
-                      {patient.allergies.length > 0 ? (
+                      {patient.allergies && patient.allergies.length > 0 ? (
                         patient.allergies.map((allergy: string, index: number) => (
                           <Badge key={index} variant="outline" className="bg-red-50 text-red-700">
                             {allergy}
@@ -930,7 +966,7 @@ function PatientDetailView({ patient, onClose }: PatientDetailViewProps) {
                   <div className="space-y-3">
                     {[
                       {
-                        date: patient.nextAppointment,
+                        date: patient.next_appointment,
                         time: "10:00 AM",
                         duration: "30 min",
                         type: "Follow-up",
@@ -954,12 +990,11 @@ function PatientDetailView({ patient, onClose }: PatientDetailViewProps) {
                             </div>
                             <div>
                               <p className="font-medium">
-                                {new Date(appointment.date).toLocaleDateString("en-US", {
+                                {appointment.date ? new Date(appointment.date).toLocaleDateString("en-US", {
                                   weekday: "short",
                                   month: "short",
                                   day: "numeric",
-                                })}
-                                , {appointment.time}
+                                }) : "No date set"}
                               </p>
                               <p className="text-xs text-slate-500">
                                 {appointment.duration} • {appointment.type}
@@ -1153,7 +1188,7 @@ function PatientDetailView({ patient, onClose }: PatientDetailViewProps) {
                   </div>
 
                   <div className="space-y-3">
-                    {patient.conditions.includes("Hypertension") ? (
+                    {patient.conditions && patient.conditions.includes("Hypertension") ? (
                       [
                         {
                           name: "Lisinopril",
@@ -1376,25 +1411,5 @@ function PatientDetailView({ patient, onClose }: PatientDetailViewProps) {
         </Button>
       </div>
     </motion.div>
-  )
-}
-
-function X({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
   )
 }

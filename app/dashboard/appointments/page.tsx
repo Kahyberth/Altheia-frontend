@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, Suspense } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   CalendarIcon,
@@ -45,91 +45,8 @@ import { AppointmentDetails } from "@/components/appointment-details"
 import { NewAppointmentDialog } from "@/components/new-appointment-dialog"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { AppointmentCalendarView } from "@/components/appointment-calendar-view"
-import { appointmentService, Appointment as BackendAppointment } from "@/services/appointments"
+import { appointmentService, Appointment as BackendAppointment } from "@/services/appointment.service"
 import { physicianService } from "@/services/physician"
-
-// Sample patient data
-const patients = [
-  {
-    id: "P-1001",
-    name: "Sarah Johnson",
-    age: 42,
-    gender: "Female",
-    email: "sarah.johnson@example.com",
-    phone: "(555) 123-4567",
-    avatar: "/placeholder.svg?height=128&width=128&text=SJ",
-  },
-  {
-    id: "P-1002",
-    name: "Michael Chen",
-    age: 35,
-    gender: "Male",
-    email: "michael.chen@example.com",
-    phone: "(555) 987-6543",
-    avatar: "/placeholder.svg?height=128&width=128&text=MC",
-  },
-  {
-    id: "P-1003",
-    name: "Amanda Rodriguez",
-    age: 28,
-    gender: "Female",
-    email: "amanda.rodriguez@example.com",
-    phone: "(555) 456-7890",
-    avatar: "/placeholder.svg?height=128&width=128&text=AR",
-  },
-  {
-    id: "P-1004",
-    name: "David Wilson",
-    age: 65,
-    gender: "Male",
-    email: "david.wilson@example.com",
-    phone: "(555) 789-0123",
-    avatar: "/placeholder.svg?height=128&width=128&text=DW",
-  },
-  {
-    id: "P-1005",
-    name: "Emily Thompson",
-    age: 31,
-    gender: "Female",
-    email: "emily.thompson@example.com",
-    phone: "(555) 234-5678",
-    avatar: "/placeholder.svg?height=128&width=128&text=ET",
-  },
-]
-
-// Sample provider data
-const providers = [
-  {
-    id: "DR-1001",
-    name: "Dr. Rebecca Taylor",
-    specialty: "Cardiologist",
-    avatar: "/placeholder.svg?height=128&width=128&text=RT",
-  },
-  {
-    id: "DR-1002",
-    name: "Dr. James Wilson",
-    specialty: "Neurologist",
-    avatar: "/placeholder.svg?height=128&width=128&text=JW",
-  },
-  {
-    id: "DR-1003",
-    name: "Dr. Maria Garcia",
-    specialty: "Pediatrician",
-    avatar: "/placeholder.svg?height=128&width=128&text=MG",
-  },
-  {
-    id: "DR-1004",
-    name: "Dr. Robert Johnson",
-    specialty: "Orthopedic Surgeon",
-    avatar: "/placeholder.svg?height=128&width=128&text=RJ",
-  },
-  {
-    id: "DR-1005",
-    name: "Dr. Lisa Chen",
-    specialty: "Dermatologist",
-    avatar: "/placeholder.svg?height=128&width=128&text=LC",
-  },
-]
 
 // Sample appointment types
 const appointmentTypes = [
@@ -151,246 +68,8 @@ const appointmentLocations = [
   { id: "virtual", name: "Virtual Visit", address: "Online" },
 ]
 
-// Sample appointment data
-const appointments = [
-  {
-    id: "APT-1001",
-    patientId: "P-1001",
-    providerId: "DR-1001",
-    date: "2025-05-20",
-    startTime: "09:00",
-    endTime: "09:30",
-    type: "check-up",
-    status: "scheduled",
-    location: "main-clinic",
-    notes: "Annual physical examination",
-    isVirtual: false,
-    createdAt: "2025-05-01T10:15:00",
-    updatedAt: "2025-05-01T10:15:00",
-  },
-  {
-    id: "APT-1002",
-    patientId: "P-1002",
-    providerId: "DR-1002",
-    date: "2025-05-20",
-    startTime: "10:30",
-    endTime: "11:15",
-    type: "consultation",
-    status: "confirmed",
-    location: "north-branch",
-    notes: "Initial consultation for headaches",
-    isVirtual: false,
-    createdAt: "2025-05-02T14:30:00",
-    updatedAt: "2025-05-10T09:45:00",
-  },
-  {
-    id: "APT-1003",
-    patientId: "P-1003",
-    providerId: "DR-1003",
-    date: "2025-05-20",
-    startTime: "13:15",
-    endTime: "13:45",
-    type: "follow-up",
-    status: "checked-in",
-    location: "main-clinic",
-    notes: "Follow-up for medication adjustment",
-    isVirtual: false,
-    createdAt: "2025-05-05T11:20:00",
-    updatedAt: "2025-05-20T13:00:00",
-  },
-  {
-    id: "APT-1004",
-    patientId: "P-1004",
-    providerId: "DR-1004",
-    date: "2025-05-20",
-    startTime: "15:00",
-    endTime: "16:00",
-    type: "procedure",
-    status: "completed",
-    location: "south-branch",
-    notes: "Knee injection procedure",
-    isVirtual: false,
-    createdAt: "2025-05-03T09:10:00",
-    updatedAt: "2025-05-20T16:15:00",
-  },
-  {
-    id: "APT-1005",
-    patientId: "P-1005",
-    providerId: "DR-1005",
-    date: "2025-05-20",
-    startTime: "16:30",
-    endTime: "17:00",
-    type: "follow-up",
-    status: "cancelled",
-    location: "virtual",
-    notes: "Patient requested cancellation",
-    isVirtual: true,
-    createdAt: "2025-05-04T15:45:00",
-    updatedAt: "2025-05-18T10:30:00",
-  },
-  {
-    id: "APT-1006",
-    patientId: "P-1001",
-    providerId: "DR-1001",
-    date: "2025-05-21",
-    startTime: "11:00",
-    endTime: "11:30",
-    type: "follow-up",
-    status: "scheduled",
-    location: "main-clinic",
-    notes: "Blood pressure check",
-    isVirtual: false,
-    createdAt: "2025-05-07T13:20:00",
-    updatedAt: "2025-05-07T13:20:00",
-  },
-  {
-    id: "APT-1007",
-    patientId: "P-1002",
-    providerId: "DR-1002",
-    date: "2025-05-21",
-    startTime: "14:00",
-    endTime: "14:45",
-    type: "consultation",
-    status: "confirmed",
-    location: "virtual",
-    notes: "Virtual follow-up for test results",
-    isVirtual: true,
-    createdAt: "2025-05-08T09:30:00",
-    updatedAt: "2025-05-15T11:45:00",
-  },
-  {
-    id: "APT-1008",
-    patientId: "P-1003",
-    providerId: "DR-1003",
-    date: "2025-05-22",
-    startTime: "09:30",
-    endTime: "10:00",
-    type: "follow-up",
-    status: "scheduled",
-    location: "south-branch",
-    notes: "Medication review",
-    isVirtual: false,
-    createdAt: "2025-05-09T16:15:00",
-    updatedAt: "2025-05-09T16:15:00",
-  },
-  {
-    id: "APT-1009",
-    patientId: "P-1004",
-    providerId: "DR-1004",
-    date: "2025-05-22",
-    startTime: "13:00",
-    endTime: "14:00",
-    type: "procedure",
-    status: "confirmed",
-    location: "main-clinic",
-    notes: "Pre-operative assessment",
-    isVirtual: false,
-    createdAt: "2025-05-10T10:45:00",
-    updatedAt: "2025-05-17T14:30:00",
-  },
-  {
-    id: "APT-1010",
-    patientId: "P-1005",
-    providerId: "DR-1005",
-    date: "2025-05-23",
-    startTime: "10:15",
-    endTime: "10:45",
-    type: "follow-up",
-    status: "scheduled",
-    location: "north-branch",
-    notes: "Skin condition follow-up",
-    isVirtual: false,
-    createdAt: "2025-05-11T13:10:00",
-    updatedAt: "2025-05-11T13:10:00",
-  },
-  {
-    id: "APT-1011",
-    patientId: "P-1001",
-    providerId: "DR-1003",
-    date: "2025-05-23",
-    startTime: "15:30",
-    endTime: "16:00",
-    type: "vaccination",
-    status: "scheduled",
-    location: "main-clinic",
-    notes: "Flu vaccination",
-    isVirtual: false,
-    createdAt: "2025-05-12T11:25:00",
-    updatedAt: "2025-05-12T11:25:00",
-  },
-  {
-    id: "APT-1012",
-    patientId: "P-1002",
-    providerId: "DR-1002",
-    date: "2025-05-24",
-    startTime: "09:00",
-    endTime: "09:45",
-    type: "consultation",
-    status: "scheduled",
-    location: "virtual",
-    notes: "Virtual consultation for headache follow-up",
-    isVirtual: true,
-    createdAt: "2025-05-13T15:40:00",
-    updatedAt: "2025-05-13T15:40:00",
-  },
-]
-
-// Sample audit trail entries
-const auditTrail = [
-  {
-    id: "AUD-1001",
-    appointmentId: "APT-1002",
-    action: "status_update",
-    user: "Dr. Rebecca Taylor",
-    timestamp: "2025-05-10T09:45:00",
-    details: "Updated status from 'scheduled' to 'confirmed'",
-    previousValue: "scheduled",
-    newValue: "confirmed",
-  },
-  {
-    id: "AUD-1002",
-    appointmentId: "APT-1003",
-    action: "status_update",
-    user: "Nurse Johnson",
-    timestamp: "2025-05-20T13:00:00",
-    details: "Updated status from 'confirmed' to 'checked-in'",
-    previousValue: "confirmed",
-    newValue: "checked-in",
-  },
-  {
-    id: "AUD-1003",
-    appointmentId: "APT-1004",
-    action: "status_update",
-    user: "Dr. Robert Johnson",
-    timestamp: "2025-05-20T16:15:00",
-    details: "Updated status from 'checked-in' to 'completed'",
-    previousValue: "checked-in",
-    newValue: "completed",
-  },
-  {
-    id: "AUD-1004",
-    appointmentId: "APT-1005",
-    action: "status_update",
-    user: "Admin Staff",
-    timestamp: "2025-05-18T10:30:00",
-    details: "Updated status from 'confirmed' to 'cancelled'",
-    previousValue: "confirmed",
-    newValue: "cancelled",
-  },
-  {
-    id: "AUD-1005",
-    appointmentId: "APT-1007",
-    action: "status_update",
-    user: "Dr. James Wilson",
-    timestamp: "2025-05-15T11:45:00",
-    details: "Updated status from 'scheduled' to 'confirmed'",
-    previousValue: "scheduled",
-    newValue: "confirmed",
-  },
-]
-
 // Define types for our frontend data
-interface FrontendAppointment {
+export interface FrontendAppointment {
   id: string
   patientId: string
   providerId: string
@@ -398,29 +77,23 @@ interface FrontendAppointment {
   startTime: string
   appointmentType: string
   status: string
-  locationId: string
   notes: string
   createdAt: string
   updatedAt: string
   patient?: {
-    id: string
-    name: string
-    age: number
-    gender: string
-    email: string
-    phone: string
-    avatar: string
+    id?: string
+    name?: string
+    age?: number
+    gender?: string
+    email?: string
+    phone?: string
+    avatar?: string
   }
   provider?: {
     id: string
     name: string
     specialty: string
     avatar: string
-  }
-  typeDetails?: {
-    id: string
-    name: string
-    duration: number
   }
   locationDetails?: {
     id: string
@@ -473,9 +146,11 @@ export default function AppointmentsPage() {
           const backendAppointments = await appointmentService.getAppointmentsByPhysicianId(transformedPhysicians[0].id)
           const transformedAppointments = backendAppointments.map((apt: BackendAppointment) => {
             const dateTime = new Date(apt.date_time)
-            // Calculate age from date_of_birth
-            const birthDate = new Date(apt.Patient.date_of_birth)
-            const age = Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+            // Calculate age from date_of_birth, safely
+            const birthDate = apt.patient?.date_of_birth ? new Date(apt.patient.date_of_birth) : null;
+            const age = birthDate
+              ? Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+              : 0;
             
             return {
               id: apt.id,
@@ -483,41 +158,39 @@ export default function AppointmentsPage() {
               providerId: apt.physician_id,
               date: format(dateTime, "yyyy-MM-dd"),
               startTime: format(dateTime, "HH:mm"),
-              appointmentType: "consultation", // You might want to add this to your backend
+              appointmentType: apt.reason,
               status: mapBackendStatus(apt.status),
-              locationId: "main-clinic", // You might want to add this to your backend
-              notes: apt.reason,
-              isVirtual: false, // You might want to add this to your backend
+              notes: "Faltan agregar al json",
               createdAt: apt.createdAt,
               updatedAt: apt.updatedAt,
-              patient: {
-                id: apt.Patient.id,
-                name: apt.patient_name,
-                age: age,
-                gender: apt.patient_gender,
-                email: apt.patient_email,
-                phone: apt.patient_phone,
-                avatar: "/placeholder.svg?height=128&width=128&text=" + apt.patient_name.split(" ").map(n => n[0]).join(""),
-              },
-              provider: {
-                id: apt.Physician.id,
-                name: apt.physician_name,
-                specialty: apt.Physician.physician_specialty,
-                avatar: "/placeholder.svg?height=128&width=128&text=" + apt.physician_name.split(" ").map(n => n[0]).join(""),
-              },
-              typeDetails: {
-                id: "consultation",
-                name: "Consultation",
-                duration: 30,
-              },
+              patient: apt.patient
+                ? {
+                    id: apt.patient.id,
+                    name: apt.patient_name,
+                    age: age,
+                    gender: apt.patient_gender,
+                    email: apt.patient_email,
+                    phone: apt.patient_phone,
+                    avatar: "/placeholder.svg?height=128&width=128&text=" + apt.patient_name.split(" ").map(n => n[0]).join(""),
+                  }
+                : undefined,
+              provider: apt.physician
+                ? {
+                    id: apt.physician.id,
+                    name: apt.physician_name,
+                    specialty: apt.physician.physician_specialty,
+                    avatar: "/placeholder.svg?height=128&width=128&text=" + apt.physician_name.split(" ").map(n => n[0]).join(""),
+                  }
+                : undefined,
               locationDetails: {
-                id: "main-clinic",
-                name: "Main Clinic",
-                address: "123 Medical Center Dr, Suite 100",
+                id: apt.clinic_id,
+                name: apt.clinic_name,
+                address: apt.clinic_address,
               },
             }
           })
           setAppointments(transformedAppointments)
+          console.log("TRANSFORMED APPOINTMENTS", transformedAppointments)
         }
       } catch (error) {
         console.error("Error fetching data:", error)
@@ -577,9 +250,8 @@ export default function AppointmentsPage() {
 
     return {
       ...appointment,
-      type: appointment.typeDetails,
+      type: appointment.appointmentType,
       location: appointment.locationDetails,
-      audit: auditTrail.filter((a: typeof auditTrail[0]) => a.appointmentId === appointment.id),
     }
   }, [selectedAppointment, appointments])
 
@@ -623,7 +295,7 @@ export default function AppointmentsPage() {
         const provider = appointment.provider
         const searchLower = searchQuery.toLowerCase()
 
-        const matchesPatient = patient?.name.toLowerCase().includes(searchLower)
+        const matchesPatient = patient?.name?.toLowerCase().includes(searchLower)
         const matchesProvider = provider?.name.toLowerCase().includes(searchLower)
         const matchesNotes = appointment.notes.toLowerCase().includes(searchLower)
         const matchesId = appointment.id.toLowerCase().includes(searchLower)
@@ -638,7 +310,7 @@ export default function AppointmentsPage() {
       if (providerFilter !== "all" && appointment.providerId !== providerFilter) return false
 
       // Filter by location
-      if (locationFilter !== "all" && appointment.locationId !== locationFilter) return false
+      if (locationFilter !== "all" && appointment.locationDetails?.id !== locationFilter) return false
 
       // Filter by type
       if (typeFilter !== "all" && appointment.appointmentType !== typeFilter) return false
@@ -671,14 +343,14 @@ export default function AppointmentsPage() {
 
   // Handle appointment cancellation
   const handleCancelAppointment = (appointmentId: string) => {
-    setAppointmentToCancel(appointmentId)
+    setAppointmentToCancel(appointmentId) 
     setShowCancelDialog(true)
   }
 
   // Confirm appointment cancellation
   const confirmCancelAppointment = () => {
-    // In a real app, this would call an API to update the appointment status
     console.log(`Cancelling appointment ${appointmentToCancel}`)
+    appointmentService.cancelAppointment(appointmentToCancel as string)
     setShowCancelDialog(false)
     setAppointmentToCancel(null)
   }
@@ -720,7 +392,7 @@ export default function AppointmentsPage() {
 
   const item = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
   }
 
   const handleAppointmentCreated = async () => {
@@ -749,9 +421,11 @@ export default function AppointmentsPage() {
             minutes: minutes
           })
           
-          // Calculate age from date_of_birth
-          const birthDate = new Date(apt.Patient.date_of_birth)
-          const age = Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+          // Calculate age from date_of_birth, safely
+          const birthDate = apt.patient?.date_of_birth ? new Date(apt.patient.date_of_birth) : null;
+          const age = birthDate
+            ? Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+            : 0;
           
           const transformed = {
             id: apt.id,
@@ -761,34 +435,32 @@ export default function AppointmentsPage() {
             startTime: format(dateTime, "HH:mm"), // Keep 24-hour format for internal use
             appointmentType: apt.reason,
             status: mapBackendStatus(apt.status),
-            locationId: "main-clinic",
             notes: apt.reason,
             createdAt: apt.createdAt,
             updatedAt: apt.updatedAt,
-            patient: {
-              id: apt.Patient.id,
-              name: apt.patient_name,
-              age: age,
-              gender: apt.patient_gender,
-              email: apt.patient_email,
-              phone: apt.patient_phone,
-              avatar: "/placeholder.svg?height=128&width=128&text=" + apt.patient_name.split(" ").map(n => n[0]).join(""),
-            },
-            provider: {
-              id: apt.Physician.id,
-              name: apt.physician_name,
-              specialty: apt.Physician.physician_specialty,
-              avatar: "/placeholder.svg?height=128&width=128&text=" + apt.physician_name.split(" ").map(n => n[0]).join(""),
-            },
-            typeDetails: {
-              id: "consultation",
-              name: "Consultation",
-              duration: 30,
-            },
+            patient: apt.patient
+              ? {
+                  id: apt.patient.id,
+                  name: apt.patient_name,
+                  age: age,
+                  gender: apt.patient_gender,
+                  email: apt.patient_email,
+                  phone: apt.patient_phone,
+                  avatar: "/placeholder.svg?height=128&width=128&text=" + apt.patient_name.split(" ").map(n => n[0]).join(""),
+                }
+              : undefined,
+            provider: apt.physician
+              ? {
+                  id: apt.physician.id,
+                  name: apt.physician_name,
+                  specialty: apt.physician.physician_specialty,
+                  avatar: "/placeholder.svg?height=128&width=128&text=" + apt.physician_name.split(" ").map(n => n[0]).join(""),
+                }
+              : undefined,
             locationDetails: {
-              id: "main-clinic",
-              name: "Main Clinic",
-              address: "123 Medical Center Dr, Suite 100",
+              id: apt.clinic_id,
+              name: apt.clinic_name,
+              address: apt.clinic_address,
             },
           }
           console.log('Transformed appointment:', transformed)
@@ -1068,11 +740,6 @@ export default function AppointmentsPage() {
                                     {dateAppointments
                                       .sort((a, b) => a.startTime.localeCompare(b.startTime))
                                       .map((appointment, index) => {
-                                        const patient = patients.find((p) => p.id === appointment.patientId)
-                                        const provider = providers.find((p) => p.id === appointment.providerId)
-                                        const type = appointmentTypes.find((t) => t.id === appointment.appointmentType)
-                                        const location = appointmentLocations.find((l) => l.id === appointment.locationId)
-
                                         return (
                                           <motion.div
                                             key={appointment.id}
@@ -1115,13 +782,13 @@ export default function AppointmentsPage() {
                                                       alt={appointment.patient?.name}
                                                     />
                                                     <AvatarFallback>
-                                                      {appointment.patient?.name
+                                                      {(appointment.patient?.name ?? "?")
                                                         .split(" ")
-                                                        .map((n) => n[0])
+                                                        .map((n) => n[0] ?? "?")
                                                         .join("")}
                                                     </AvatarFallback>
                                                   </Avatar>
-                                                  <span className="font-medium">{appointment.patient?.name}</span>
+                                                  <span className="font-medium">{appointment.patient?.name ?? "Unknown"}</span>
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                                                   <div className="flex items-center gap-1">
@@ -1130,7 +797,7 @@ export default function AppointmentsPage() {
                                                   </div>
                                                   <div className="flex items-center gap-1">
                                                     <FileText className="h-3.5 w-3.5" />
-                                                    <span>{appointment.typeDetails?.name}</span>
+                                                    <span>{appointment.appointmentType}</span>
                                                   </div>
                                                   <div className="flex items-center gap-1">
                                                     <MapPin className="h-3.5 w-3.5" />
@@ -1198,8 +865,8 @@ export default function AppointmentsPage() {
                     <CardContent>
                       <AppointmentCalendarView
                         appointments={filteredAppointments}
-                        patients={patients}
-                        providers={providers}
+                        patients={[]}
+                        providers={[]}
                         appointmentTypes={appointmentTypes}
                         appointmentLocations={appointmentLocations}
                         selectedDate={selectedDate}

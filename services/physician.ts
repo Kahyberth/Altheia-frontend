@@ -1,5 +1,5 @@
 import apiClient from "@/fetch/apiClient";
-import { Physician } from "./appointments";
+import { Physician } from "./appointment.service";
 
 export const physicianService = {
 getAllPhysicians: async (): Promise<Physician[]> => {
