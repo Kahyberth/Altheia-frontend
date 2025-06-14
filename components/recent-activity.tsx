@@ -4,12 +4,14 @@ import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Send, Bot, User, Loader2 } from "lucide-react"
+import { Send, Bot, User, Loader2, ChevronRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import { Stethoscope, Building } from "lucide-react"
 
 interface Message {
   id: string

@@ -18,11 +18,14 @@ import {
   CalendarClock,
   CalendarX,
   CalendarCheck,
+  Menu,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -802,7 +805,7 @@ export default function AppointmentsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -810,7 +813,7 @@ export default function AppointmentsPage() {
           className="flex flex-col items-center"
         >
           <div className="relative h-12 w-12 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600">
-            <CalendarIcon className="absolute inset-0 m-auto text-white h-6 w-6" />
+            <Calendar className="absolute inset-0 m-auto text-white h-6 w-6" />
           </div>
           <motion.div
             initial={{ width: 0 }}
@@ -818,14 +821,14 @@ export default function AppointmentsPage() {
             transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
             className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
           />
-          <p className="mt-4 text-sm text-slate-600">Loading appointments...</p>
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Cargando citas...</p>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-900">
       {/* Sidebar */}
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 

@@ -78,9 +78,9 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 to-white">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 w-full border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm dark:border-slate-700">
         <div className="container flex h-16 items-center justify-between mx-auto">
           <div className="flex items-center gap-2">
             <motion.div
@@ -92,7 +92,7 @@ export default function LandingPage() {
                 <div className="relative h-8 w-8 mr-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600">
                   <Shield className="absolute inset-0 m-auto text-white h-5 w-5" />
                 </div>
-                <span className="font-bold text-xl text-slate-900">
+                <span className="font-bold text-xl text-slate-900 dark:text-white">
                   Altheia
                 </span>
               </Link>
@@ -108,13 +108,13 @@ export default function LandingPage() {
           >
             <Link
               href="#features"
-              className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
+              className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               Características
             </Link>
             <Link
               href="#contact"
-              className="text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
+              className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               Contacto
             </Link>
@@ -141,9 +141,9 @@ export default function LandingPage() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
-                <X className="h-6 w-6 text-slate-700" />
+                <X className="h-6 w-6 text-slate-700 dark:text-slate-300" />
               ) : (
-                <Menu className="h-6 w-6 text-slate-700" />
+                <Menu className="h-6 w-6 text-slate-700 dark:text-slate-300" />
               )}
             </motion.button>
           </div>
@@ -155,19 +155,19 @@ export default function LandingPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t"
+            className="md:hidden border-t dark:border-slate-700"
           >
             <div className="container py-4 space-y-4">
               <Link
                 href="#features"
-                className="block text-sm font-medium text-slate-700 hover:text-blue-600"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Características
               </Link>
               <Link
                 href="#contact"
-                className="block text-sm font-medium text-slate-700 hover:text-blue-600"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contacto
@@ -198,19 +198,19 @@ export default function LandingPage() {
                 className="space-y-6"
               >
                 <motion.div variants={item}>
-                  <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                  <span className="inline-block rounded-full bg-blue-100 dark:bg-blue-900 px-3 py-1 text-sm font-medium text-blue-800 dark:text-blue-200">
                     Next-Generation EHR
                   </span>
                 </motion.div>
                 <motion.h1
                   variants={item}
-                  className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700"
+                  className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 dark:from-white dark:via-slate-200 dark:to-slate-300"
                 >
                   Altheia, tu aliado en la salud
                 </motion.h1>
                 <motion.p
                   variants={item}
-                  className="max-w-[600px] text-slate-600 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
+                  className="max-w-[600px] text-slate-600 dark:text-slate-400 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
                 >
                   Altheia es una plataforma de salud que te ayuda a gestionar tu clínica de manera eficiente y segura.
                 </motion.p>
@@ -251,15 +251,15 @@ export default function LandingPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6, duration: 0.5 }}
-                  className="absolute -bottom-6 -right-6 rounded-lg bg-white p-4 shadow-lg md:bottom-8 md:right-8"
+                  className="absolute -bottom-6 -right-6 rounded-lg bg-white dark:bg-slate-800 p-4 shadow-lg md:bottom-8 md:right-8"
                 >
                   <div className="flex items-center gap-4">
                     <div className="rounded-full bg-green-100 p-2">
                       <CheckCircle2 className="h-6 w-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">Seguridad</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-sm font-medium dark:text-white">Seguridad</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Seguridad de datos y privacidad
                       </p>
                     </div>
@@ -280,13 +280,13 @@ export default function LandingPage() {
               variants={fadeIn}
               className="flex flex-col items-center justify-center space-y-4 text-center mb-12"
             >
-              <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+              <span className="inline-block rounded-full bg-blue-100 dark:bg-blue-900 px-3 py-1 text-sm font-medium text-blue-800 dark:text-blue-200">
                 Características
               </span>
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl dark:text-white">
                 Todo lo que necesitas en una sola plataforma
               </h2>
-              <p className="max-w-[700px] text-slate-600 md:text-xl/relaxed">
+              <p className="max-w-[700px] text-slate-600 dark:text-slate-400 md:text-xl/relaxed">
                 Altheia combina características poderosas con una interfaz intuitiva para transformar cómo gestionas la atención médica.
               </p>
             </motion.div>
@@ -346,12 +346,12 @@ export default function LandingPage() {
                           stiffness: 400,
                           damping: 10,
                         }}
-                        className="mb-4 rounded-full bg-blue-50 p-3 w-fit"
+                        className="mb-4 rounded-full bg-blue-50 dark:bg-blue-900/20 p-3 w-fit"
                       >
                         {feature.icon}
                       </motion.div>
-                      <h3 className="text-xl font-bold">{feature.title}</h3>
-                      <p className="mt-2 text-slate-600">
+                      <h3 className="text-xl font-bold dark:text-white">{feature.title}</h3>
+                      <p className="mt-2 text-slate-600 dark:text-slate-400">
                         {feature.description}
                       </p>
                     </CardContent>
@@ -363,7 +363,7 @@ export default function LandingPage() {
         </section>
 
         {/* Interface Showcase */}
-        <section className="border-t border-b bg-slate-50 py-20 md:py-28 lg:py-32">
+        <section className="border-t border-b bg-slate-50 dark:bg-slate-800 dark:border-slate-700 py-20 md:py-28 lg:py-32">
           <div className="container px-4 md:px-6 mx-auto">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
               <motion.div
@@ -373,13 +373,13 @@ export default function LandingPage() {
                 transition={{ duration: 0.6 }}
                 className="space-y-6"
               >
-                <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                <span className="inline-block rounded-full bg-blue-100 dark:bg-blue-900 px-3 py-1 text-sm font-medium text-blue-800 dark:text-blue-200">
                   Interfaz Premium
                 </span>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl dark:text-white">
                   Diseñada para eficiencia y claridad
                 </h2>
-                <p className="text-slate-600 md:text-lg">
+                <p className="text-slate-600 dark:text-slate-400 md:text-lg">
                   Nuestra interfaz intuitiva reduce la carga cognitiva y ayuda a los proveedores de atención médica a enfocarse en lo que importa: el cuidado del paciente.
                 </p>
                 <ul className="space-y-4">
@@ -398,7 +398,7 @@ export default function LandingPage() {
                       className="flex items-center gap-3"
                     >
                       <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      <span>{item}</span>
+                      <span className="dark:text-slate-300">{item}</span>
                     </motion.li>
                   ))}
                 </ul>
@@ -430,17 +430,17 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.4, duration: 0.5 }}
-                  className="absolute -bottom-6 -left-6 rounded-lg bg-white p-4 shadow-lg md:bottom-8 md:left-8"
+                  className="absolute -bottom-6 -left-6 rounded-lg bg-white dark:bg-slate-800 p-4 shadow-lg md:bottom-8 md:left-8"
                 >
                   <div className="flex items-center gap-4">
                     <div className="rounded-full bg-blue-100 p-2">
                       <Users className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">
+                      <p className="text-sm font-medium dark:text-white">
                         Diseño Centrado en el Usuario
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Desarrollada con proveedores de atención médica
                       </p>
                     </div>
@@ -461,13 +461,13 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="mx-auto max-w-3xl text-center"
             >
-              <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+              <span className="inline-block rounded-full bg-blue-100 dark:bg-blue-900 px-3 py-1 text-sm font-medium text-blue-800 dark:text-blue-200">
                 Únete a Altheia
               </span>
-              <h2 className="mt-4 text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+              <h2 className="mt-4 text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl dark:text-white">
                 Listo para transformar tu práctica?
               </h2>
-              <p className="mt-4 max-w-[700px] mx-auto text-slate-600 md:text-xl/relaxed">
+              <p className="mt-4 max-w-[700px] mx-auto text-slate-600 dark:text-slate-400 md:text-xl/relaxed">
                 Únete a cientos de proveedores de atención médica que han elevado su atención al paciente con Altheia. Agenda una demostración para ver cómo podemos ayudarte a tu práctica.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
@@ -492,7 +492,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-white py-12 md:py-16">
+      <footer className="border-t bg-white dark:bg-slate-900 dark:border-slate-700 py-12 md:py-16">
         <div className="container px-4 md:px-6 mx-auto">
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-4">
@@ -500,15 +500,15 @@ export default function LandingPage() {
                 <div className="relative h-8 w-8 mr-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600">
                   <Shield className="absolute inset-0 m-auto text-white h-5 w-5" />
                 </div>
-                <span className="font-bold text-xl text-slate-900">
+                <span className="font-bold text-xl text-slate-900 dark:text-white">
                   Altheia
                 </span>
               </Link>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Altheia es una plataforma de salud que te ayuda a gestionar tu clínica de manera eficiente y segura.
               </p>
               <div className="flex space-x-4">
-                <Link href="#" className="text-slate-600 hover:text-blue-600">
+                <Link href="#" className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400">
                   <span className="sr-only">Twitter</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

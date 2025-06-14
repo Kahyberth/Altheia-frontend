@@ -171,7 +171,7 @@ export default function ClinicManagementPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -187,7 +187,7 @@ export default function ClinicManagementPage() {
             transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
             className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
           />
-          <p className="mt-4 text-sm text-slate-600">Cargando gestión de clínica...</p>
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Cargando gestión de clínica...</p>
         </motion.div>
       </div>
     )
@@ -195,29 +195,29 @@ export default function ClinicManagementPage() {
 
   if (!clinicInfo) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-slate-900">No se encontró información de la clínica</h2>
-          <p className="mt-2 text-slate-600">Por favor, contacta al administrador del sistema.</p>
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">No se encontró información de la clínica</h2>
+          <p className="mt-2 text-slate-600 dark:text-slate-400">Por favor, contacta al administrador del sistema.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-900">
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white dark:bg-slate-800 dark:border-slate-700 px-4 md:px-6">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <Button variant="ghost" size="icon" className="md:hidden dark:text-white dark:hover:bg-slate-700" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle Menu</span>
             </Button>
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-blue-600" />
-              <h1 className="text-lg font-semibold">Gestión de Clínica</h1>
+              <h1 className="text-lg font-semibold dark:text-white">Gestión de Clínica</h1>
             </div>
           </div>
           <Button onClick={() => setEditInfoOpen(true)} className="gap-2">
@@ -230,7 +230,7 @@ export default function ClinicManagementPage() {
           <motion.div initial="hidden" animate="show" variants={container} className="mx-auto max-w-6xl space-y-6">
             {/* Clinic Overview */}
             <motion.div variants={item}>
-              <Card className="overflow-hidden">
+              <Card className="overflow-hidden dark:bg-slate-800 dark:border-slate-700">
                 <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-6 text-white">
                   <div className="flex items-start justify-between">
                     <div>
@@ -271,88 +271,88 @@ export default function ClinicManagementPage() {
             {/* Main Content Tabs */}
             <motion.div variants={item}>
               <Tabs defaultValue="general" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="general">Información General</TabsTrigger>
-                  <TabsTrigger value="owner">Propietario</TabsTrigger>
-                  <TabsTrigger value="services">Servicios</TabsTrigger>
-                  <TabsTrigger value="eps">EPS Aceptadas</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-4 dark:bg-slate-800">
+                  <TabsTrigger value="general" className="dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">Información General</TabsTrigger>
+                  <TabsTrigger value="owner" className="dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">Propietario</TabsTrigger>
+                  <TabsTrigger value="services" className="dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">Servicios</TabsTrigger>
+                  <TabsTrigger value="eps" className="dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">EPS Aceptadas</TabsTrigger>
                 </TabsList>
 
                 {/* General Information */}
                 <TabsContent value="general" className="space-y-6">
                   <div className="grid gap-6 lg:grid-cols-2">
-                    <Card>
+                    <Card className="dark:bg-slate-800 dark:border-slate-700">
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 dark:text-white">
                           <Building2 className="h-5 w-5 text-blue-600" />
                           Información de la Clínica
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid gap-2">
-                          <Label className="text-sm font-medium text-slate-600">Nombre</Label>
-                          <p className="text-sm">{clinicInfo.information.clinic_name}</p>
+                          <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Nombre</Label>
+                          <p className="text-sm dark:text-slate-300">{clinicInfo.information.clinic_name}</p>
                         </div>
                         <div className="grid gap-2">
-                          <Label className="text-sm font-medium text-slate-600">Email</Label>
+                          <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Email</Label>
                           <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-slate-400" />
-                            <p className="text-sm">{clinicInfo.information.clinic_email}</p>
+                            <Mail className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.information.clinic_email}</p>
                           </div>
                         </div>
                         <div className="grid gap-2">
-                          <Label className="text-sm font-medium text-slate-600">Teléfono</Label>
+                          <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Teléfono</Label>
                           <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-slate-400" />
-                            <p className="text-sm">{clinicInfo.information.clinic_phone}</p>
+                            <Phone className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.information.clinic_phone}</p>
                           </div>
                         </div>
                         <div className="grid gap-2">
-                          <Label className="text-sm font-medium text-slate-600">Sitio Web</Label>
+                          <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Sitio Web</Label>
                           <div className="flex items-center gap-2">
-                            <Globe className="h-4 w-4 text-slate-400" />
-                            <a href={clinicInfo.information.clinic_website} className="text-sm text-blue-600 hover:underline">
+                            <Globe className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                            <a href={clinicInfo.information.clinic_website} className="text-sm text-blue-600 hover:underline dark:text-blue-400">
                               {clinicInfo.information.clinic_website}
                             </a>
                           </div>
                         </div>
                         <div className="grid gap-2">
-                          <Label className="text-sm font-medium text-slate-600">Descripción</Label>
-                          <p className="text-sm text-slate-700">{clinicInfo.information.clinic_description}</p>
+                          <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Descripción</Label>
+                          <p className="text-sm text-slate-700 dark:text-slate-300">{clinicInfo.information.clinic_description}</p>
                         </div>
                       </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="dark:bg-slate-800 dark:border-slate-700">
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 dark:text-white">
                           <MapPin className="h-5 w-5 text-blue-600" />
                           Ubicación
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid gap-2">
-                          <Label className="text-sm font-medium text-slate-600">Dirección</Label>
-                          <p className="text-sm">{clinicInfo.information.address}</p>
+                          <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Dirección</Label>
+                          <p className="text-sm dark:text-slate-300">{clinicInfo.information.address}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">Ciudad</Label>
-                            <p className="text-sm">{clinicInfo.information.city}</p>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Ciudad</Label>
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.information.city}</p>
                           </div>
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">Estado</Label>
-                            <p className="text-sm">{clinicInfo.information.state}</p>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Estado</Label>
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.information.state}</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">País</Label>
-                            <p className="text-sm">{clinicInfo.information.country}</p>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">País</Label>
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.information.country}</p>
                           </div>
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">Código Postal</Label>
-                            <p className="text-sm">{clinicInfo.information.postal_code}</p>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Código Postal</Label>
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.information.postal_code}</p>
                           </div>
                         </div>
                       </CardContent>
@@ -362,44 +362,44 @@ export default function ClinicManagementPage() {
 
                 {/* Owner Information */}
                 <TabsContent value="owner" className="space-y-6">
-                  <Card>
+                  <Card className="dark:bg-slate-800 dark:border-slate-700">
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2 dark:text-white">
                         <Users className="h-5 w-5 text-blue-600" />
                         Información del Propietario
                       </CardTitle>
-                      <CardDescription>Datos del responsable legal y director de la clínica</CardDescription>
+                      <CardDescription className="dark:text-slate-400">Datos del responsable legal y director de la clínica</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-6 lg:grid-cols-2">
                         <div className="space-y-4">
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">Nombre Completo</Label>
-                            <p className="text-sm">{clinicInfo.owner.name}</p>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Nombre Completo</Label>
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.owner.name}</p>
                           </div>
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">Email</Label>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Email</Label>
                             <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-slate-400" />
-                              <p className="text-sm">{clinicInfo.owner.email}</p>
+                              <Mail className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                              <p className="text-sm dark:text-slate-300">{clinicInfo.owner.email}</p>
                             </div>
                           </div>
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">Teléfono</Label>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Teléfono</Label>
                             <div className="flex items-center gap-2">
-                              <Phone className="h-4 w-4 text-slate-400" />
-                              <p className="text-sm">{clinicInfo.owner.phone}</p>
+                              <Phone className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                              <p className="text-sm dark:text-slate-300">{clinicInfo.owner.phone}</p>
                             </div>
                           </div>
                         </div>
                         <div className="space-y-4">
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">Número de Documento</Label>
-                            <p className="text-sm">{clinicInfo.owner.document_number}</p>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Número de Documento</Label>
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.owner.document_number}</p>
                           </div>
                           <div className="grid gap-2">
-                            <Label className="text-sm font-medium text-slate-600">Género</Label>
-                            <p className="text-sm">{clinicInfo.owner.gender}</p>
+                            <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">Género</Label>
+                            <p className="text-sm dark:text-slate-300">{clinicInfo.owner.gender}</p>
                           </div>
                         </div>
                       </div>
@@ -409,15 +409,15 @@ export default function ClinicManagementPage() {
 
                 {/* Services */}
                 <TabsContent value="services" className="space-y-6">
-                  <Card>
+                  <Card className="dark:bg-slate-800 dark:border-slate-700">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
-                          <CardTitle className="flex items-center gap-2">
+                          <CardTitle className="flex items-center gap-2 dark:text-white">
                             <Stethoscope className="h-5 w-5 text-blue-600" />
                             Servicios Ofrecidos
                           </CardTitle>
-                          <CardDescription>Gestiona los servicios médicos que ofrece tu clínica</CardDescription>
+                          <CardDescription className="dark:text-slate-400">Gestiona los servicios médicos que ofrece tu clínica</CardDescription>
                         </div>
                         <Button onClick={() => setAddServiceOpen(true)} className="gap-2">
                           <Plus className="h-4 w-4" />
@@ -433,18 +433,18 @@ export default function ClinicManagementPage() {
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: index * 0.05 }}
-                            className="group flex items-center justify-between rounded-lg border bg-white p-3 hover:shadow-sm"
+                            className="group flex items-center justify-between rounded-lg border bg-white dark:bg-slate-700 dark:border-slate-600 p-3 hover:shadow-sm"
                           >
                             <div className="flex items-center gap-2">
-                              <div className="rounded-full bg-blue-50 p-1.5">
-                                <Stethoscope className="h-3.5 w-3.5 text-blue-600" />
+                              <div className="rounded-full bg-blue-50 dark:bg-blue-900 p-1.5">
+                                <Stethoscope className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                               </div>
-                              <span className="text-sm font-medium">{service.name}</span>
+                              <span className="text-sm font-medium dark:text-white">{service.name}</span>
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-slate-600"
                               onClick={() => handleRemoveService(service.id)}
                             >
                               <X className="h-4 w-4 text-red-500" />
@@ -454,9 +454,9 @@ export default function ClinicManagementPage() {
                       </div>
                       {(clinicInfo.information["services offered"] ?? []).length === 0 && (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
-                          <Stethoscope className="h-12 w-12 text-slate-300 mb-4" />
-                          <p className="text-slate-500">No hay servicios registrados</p>
-                          <p className="text-sm text-slate-400 mt-1">Añade servicios para comenzar</p>
+                          <Stethoscope className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-4" />
+                          <p className="text-slate-500 dark:text-slate-400">No hay servicios registrados</p>
+                          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Añade servicios para comenzar</p>
                         </div>
                       )}
                     </CardContent>
@@ -465,15 +465,15 @@ export default function ClinicManagementPage() {
 
                 {/* EPS */}
                 <TabsContent value="eps" className="space-y-6">
-                  <Card>
+                  <Card className="dark:bg-slate-800 dark:border-slate-700">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
-                          <CardTitle className="flex items-center gap-2">
+                          <CardTitle className="flex items-center gap-2 dark:text-white">
                             <Shield className="h-5 w-5 text-blue-600" />
                             EPS Aceptadas
                           </CardTitle>
-                          <CardDescription>
+                          <CardDescription className="dark:text-slate-400">
                             Administra las EPS que acepta tu clínica para atención médica
                           </CardDescription>
                         </div>
@@ -491,18 +491,18 @@ export default function ClinicManagementPage() {
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: index * 0.05 }}
-                            className="group flex items-center justify-between rounded-lg border bg-white p-3 hover:shadow-sm"
+                            className="group flex items-center justify-between rounded-lg border bg-white dark:bg-slate-700 dark:border-slate-600 p-3 hover:shadow-sm"
                           >
                             <div className="flex items-center gap-2">
-                              <div className="rounded-full bg-green-50 p-1.5">
-                                <Shield className="h-3.5 w-3.5 text-green-600" />
+                              <div className="rounded-full bg-green-50 dark:bg-green-900 p-1.5">
+                                <Shield className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                               </div>
-                              <span className="text-sm font-medium">{eps.name}</span>
+                              <span className="text-sm font-medium dark:text-white">{eps.name}</span>
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-slate-600"
                               onClick={() => handleRemoveEps(eps.id)}
                             >
                               <X className="h-4 w-4 text-red-500" />
@@ -512,9 +512,9 @@ export default function ClinicManagementPage() {
                       </div>
                       {clinicInfo.information["eps offered"].length === 0 && (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
-                          <Shield className="h-12 w-12 text-slate-300 mb-4" />
-                          <p className="text-slate-500">No hay EPS registradas</p>
-                          <p className="text-sm text-slate-400 mt-1">Añade EPS para comenzar</p>
+                          <Shield className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-4" />
+                          <p className="text-slate-500 dark:text-slate-400">No hay EPS registradas</p>
+                          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Añade EPS para comenzar</p>
                         </div>
                       )}
                     </CardContent>

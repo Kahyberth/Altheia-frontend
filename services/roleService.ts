@@ -11,7 +11,6 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
       { resource: 'appointments', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'records', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'analytics', actions: ['read'] },
-      { resource: 'settings', actions: ['read', 'update'] },
       { resource: 'clinic', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'staff', actions: ['create', 'read', 'update', 'delete'] }
     ],
@@ -20,9 +19,7 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
       { id: 'users', label: 'Gestión de Personal', icon: 'Users', href: '/dashboard/staff-management' },
       { id: 'patients', label: 'Pacientes', icon: 'User', href: '/dashboard/patients' },
       { id: 'appointments', label: 'Citas', icon: 'Calendar', href: '/dashboard/appointments' },
-      { id: 'records', label: 'Historiales', icon: 'FileText', href: '/dashboard/records' },
       { id: 'analytics', label: 'Analíticas', icon: 'BarChart3', href: '/dashboard/analytics' },
-      { id: 'settings', label: 'Configuración', icon: 'Settings', href: '/dashboard/settings' },
       { id: 'clinic', label: 'Gestión Clínica', icon: 'Shield', href: '/dashboard/clinic-management' },
     ]
   },

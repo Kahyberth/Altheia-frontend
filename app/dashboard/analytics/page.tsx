@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -111,32 +111,32 @@ export default function AnalyticsPage() {
             transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
             className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
           />
-          <p className="mt-4 text-sm text-slate-600">Loading analytics data...</p>
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Cargando analíticas...</p>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-900">
       {/* Sidebar */}
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white dark:bg-slate-800 dark:border-slate-700 px-4 md:px-6">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <Button variant="ghost" size="icon" className="md:hidden dark:text-white dark:hover:bg-slate-700" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle Menu</span>
             </Button>
             <div className="relative w-full max-w-md">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500 dark:text-slate-400" />
               <Input
                 type="search"
                 placeholder="Search reports, metrics, or patients..."
-                className="w-full bg-slate-50 pl-8 focus-visible:ring-blue-500"
+                className="w-full bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white pl-8 focus-visible:ring-blue-500"
               />
             </div>
           </div>
@@ -164,8 +164,8 @@ export default function AnalyticsPage() {
             <motion.div variants={item} className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Analytics & Reporting</h1>
-                  <p className="text-sm text-slate-500">Gain insights from your healthcare data</p>
+                  <h1 className="text-2xl font-bold tracking-tight dark:text-white">Analytics & Reporting</h1>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Gain insights from your healthcare data</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <DropdownMenu>
@@ -242,7 +242,7 @@ export default function AnalyticsPage() {
             <motion.div variants={item}>
               <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-4">
                 <div className="overflow-auto">
-                  <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-slate-100 p-1 text-slate-500 w-auto">
+                  <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 p-1 text-slate-500 dark:text-slate-400 w-auto">
                     <TabsTrigger
                       value="overview"
                       className="rounded-md px-3 py-1 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow"

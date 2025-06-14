@@ -61,9 +61,16 @@ import {
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { useMobile } from "@/hooks/use-mobile"
 import { DeleteAccountDialog } from "@/components/delete-account-dialog"
+import { useAuth } from "@/context/AuthContext"
+import { useRouter } from "next/navigation"
+import { addToast } from "@heroui/react"
+import { getClinicInformation } from "@/services/clinic.service"
+import { updateUserProfile } from "@/services/user.service"
+import apiClient from "@/fetch/apiClient"
+import { useTheme } from "@/context/ThemeContext"
 
-// Sample user data
-const userData = {
+// Sample / fallback user data (will be replaced after fetching real info)
+const SAMPLE_USER_DATA = {
   id: "U-1001",
   name: "Dr. Rebecca Taylor",
   email: "rebecca.taylor@medisync.com",
@@ -108,25 +115,62 @@ export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const { user, logout } = useAuth()
+  const router = useRouter()
+  const { theme, setTheme } = useTheme()
+
+  // Local state to hold user profile coming from backend (starts with fallback data)
+  const [userData, setUserData] = useState(SAMPLE_USER_DATA)
   const [formData, setFormData] = useState({
-    name: userData.name,
-    email: userData.email,
-    phone: userData.phone,
-    department: userData.department,
-    licenseNumber: userData.licenseNumber,
+    name: SAMPLE_USER_DATA.name,
+    email: SAMPLE_USER_DATA.email,
+    phone: SAMPLE_USER_DATA.phone,
+    department: SAMPLE_USER_DATA.department,
+    licenseNumber: SAMPLE_USER_DATA.licenseNumber,
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   })
 
   useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
+    const fetchProfile = async () => {
+      if (!user?.id) {
+        setIsLoading(false)
+        return
+      }
 
-    return () => clearTimeout(timer)
-  }, [])
+      try {
+        const res = await getClinicInformation(user.id)
+        const data = res.data || res
+        const owner = data.owner || {}
+
+        const updatedProfile = {
+          ...SAMPLE_USER_DATA,
+          ...owner,
+          role: (owner as any).rol || SAMPLE_USER_DATA.role,
+          joinDate: owner.createdAt ? String(owner.createdAt) : SAMPLE_USER_DATA.joinDate,
+          lastActive: owner.lastLogin ? String(owner.lastLogin) : SAMPLE_USER_DATA.lastActive,
+        }
+
+        setUserData(updatedProfile)
+        setFormData((prev) => ({
+          ...prev,
+          name: updatedProfile.name,
+          email: updatedProfile.email,
+          phone: updatedProfile.phone,
+          department: updatedProfile.department,
+          licenseNumber: updatedProfile.licenseNumber,
+        }))
+      } catch (err) {
+        console.error(err)
+        addToast({ title: "Error", description: "No se pudo cargar tu perfil" })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [user?.id])
 
   useEffect(() => {
     setSidebarOpen(!isMobile)
@@ -137,11 +181,33 @@ export default function ProfilePage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSavePersonalInfo = () => {
-    // Here you would typically save the data to your backend
-    // For this demo, we'll just toggle edit mode off
-    setEditMode(false)
-    // Show success notification
+  const handleSavePersonalInfo = async () => {
+    if (!user) return
+
+    try {
+      await updateUserProfile(user.id, {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        department: formData.department,
+        licenseNumber: formData.licenseNumber,
+      })
+
+      setUserData((prev) => ({
+        ...prev,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        department: formData.department,
+        licenseNumber: formData.licenseNumber,
+      }))
+
+      setEditMode(false)
+      addToast({ title: "Perfil actualizado", description: "Se guardaron los cambios de tu perfil." })
+    } catch (err) {
+      console.error(err)
+      addToast({ title: "Error", description: "No se pudo actualizar tu perfil." })
+    }
   }
 
   const handleCancelEdit = () => {
@@ -157,16 +223,23 @@ export default function ProfilePage() {
     setEditMode(false)
   }
 
-  const handlePasswordChange = () => {
-    // Here you would validate and submit the password change
-    // For this demo, we'll just reset the form
-    setFormData({
-      ...formData,
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    })
-    // Show success notification
+  const handlePasswordChange = async () => {
+    if (!user) return
+
+    try {
+      await apiClient.post("/auth/change-password", {
+        user_id: user.id,
+        current_password: formData.currentPassword,
+        new_password: formData.newPassword,
+      })
+
+      addToast({ title: "Contraseña actualizada", description: "Tu contraseña se ha actualizado correctamente." })
+    } catch (err) {
+      console.error(err)
+      addToast({ title: "Error", description: "No se pudo actualizar la contraseña." })
+    } finally {
+      setFormData((prev) => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }))
+    }
   }
 
   const calculatePasswordStrength = (password: string) => {
@@ -187,6 +260,20 @@ export default function ProfilePage() {
   }
 
   const passwordStrength = calculatePasswordStrength(formData.newPassword)
+
+  // Determine what label to show for the user depending on their backend role
+  const displayRole = (() => {
+    const role = (userData.role || "").toLowerCase()
+    if (role === "owner" || role === "clinic_owner") return "Creador de la clínica"
+    if (role === "patient") return "Paciente"
+    if (role === "physician") {
+      // Use specialty or fallback to department or generic label
+      // @ts-ignore – specialty might come from backend but is not typed
+      return userData.physician_specialty || userData.department || "Médico"
+    }
+    // Capitalize by default
+    return role.charAt(0).toUpperCase() + role.slice(1)
+  })()
 
   const getPasswordStrengthLabel = () => {
     if (passwordStrength <= 25) return { label: "Weak", color: "text-red-500" }
@@ -220,7 +307,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -236,14 +323,14 @@ export default function ProfilePage() {
             transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
             className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
           />
-          <p className="mt-4 text-sm text-slate-600">Loading your profile...</p>
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Loading your profile...</p>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-900">
       {/* Sidebar */}
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
@@ -256,19 +343,19 @@ export default function ProfilePage() {
           <motion.div initial="hidden" animate="show" variants={container} className="mx-auto max-w-4xl space-y-6">
             {/* Page Title */}
             <motion.div variants={item} className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold tracking-tight">My Profile</h1>
-              <p className="text-sm text-slate-500">Manage your account settings and preferences</p>
+              <h1 className="text-2xl font-bold tracking-tight dark:text-white">My Profile</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Manage your account settings and preferences</p>
             </motion.div>
 
             {/* Profile Header */}
             <motion.div variants={item}>
-              <Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700">
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
                     <div className="relative">
-                      <Avatar className="h-24 w-24 border-4 border-white shadow-md">
+                      <Avatar className="h-24 w-24 border-4 border-white dark:border-slate-700 shadow-md">
                         <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={userData.name} />
-                        <AvatarFallback className="text-lg">
+                        <AvatarFallback className="text-lg dark:bg-slate-700 dark:text-white">
                           {userData.name
                             .split(" ")
                             .map((n) => n[0])
@@ -285,18 +372,18 @@ export default function ProfilePage() {
                             <span className="sr-only">Change avatar</span>
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="dark:bg-slate-800 dark:border-slate-700">
                           <DialogHeader>
-                            <DialogTitle>Change Profile Picture</DialogTitle>
-                            <DialogDescription>
+                            <DialogTitle className="dark:text-white">Change Profile Picture</DialogTitle>
+                            <DialogDescription className="dark:text-slate-400">
                               Upload a new profile picture. The image should be at least 400x400 pixels.
                             </DialogDescription>
                           </DialogHeader>
                           <div className="grid gap-4 py-4">
                             <div className="flex flex-col items-center gap-4">
-                              <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+                              <Avatar className="h-32 w-32 border-4 border-white dark:border-slate-700 shadow-md">
                                 <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={userData.name} />
-                                <AvatarFallback className="text-2xl">
+                                <AvatarFallback className="text-2xl dark:bg-slate-700 dark:text-white">
                                   {userData.name
                                     .split(" ")
                                     .map((n) => n[0])
@@ -304,30 +391,32 @@ export default function ProfilePage() {
                                 </AvatarFallback>
                               </Avatar>
                               <div className="grid w-full gap-2">
-                                <Label htmlFor="picture">Upload Picture</Label>
-                                <Input id="picture" type="file" accept="image/*" />
+                                <Label htmlFor="picture" className="dark:text-white">Upload Picture</Label>
+                                <Input id="picture" type="file" accept="image/*" className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                               </div>
                             </div>
                           </div>
                           <DialogFooter>
-                            <Button variant="outline">Cancel</Button>
+                            <Button variant="outline" className="dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600">Cancel</Button>
                             <Button>Save Changes</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
                     </div>
                     <div className="flex flex-1 flex-col items-center text-center md:items-start md:text-left">
-                      <h2 className="text-xl font-bold">{userData.name}</h2>
-                      <p className="text-slate-500">{userData.role}</p>
+                      <h2 className="text-xl font-bold dark:text-white">{userData.name}</h2>
+                      <p className="text-slate-500 dark:text-slate-400">{displayRole}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          {userData.department}
-                        </Badge>
-                        <Badge variant="outline" className="bg-slate-100">
+                        {displayRole !== "Creador de la clínica" && displayRole !== "Paciente" && userData.department && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700">
+                            {userData.department}
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
                           License: {userData.licenseNumber}
                         </Badge>
                       </div>
-                      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>
@@ -356,7 +445,7 @@ export default function ProfilePage() {
                     <div className="flex flex-col gap-2 md:self-start">
                       <Button
                         variant="outline"
-                        className="gap-2"
+                        className="gap-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600"
                         onClick={() => {
                           setEditMode(!editMode)
                           if (!editMode) {
@@ -374,7 +463,14 @@ export default function ProfilePage() {
                           </>
                         )}
                       </Button>
-                      <Button variant="outline" className="gap-2 text-red-600 hover:text-red-700">
+                      <Button
+                        variant="outline"
+                        className="gap-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 dark:bg-slate-700 dark:border-slate-600 dark:hover:bg-slate-600"
+                        onClick={async () => {
+                          await logout()
+                          router.push("/")
+                        }}
+                      >
                         <LogOut className="h-4 w-4" /> Sign Out
                       </Button>
                     </div>
@@ -386,23 +482,23 @@ export default function ProfilePage() {
             {/* Profile Tabs */}
             <motion.div variants={item}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="personal" className="flex gap-2">
+                <TabsList className="grid w-full grid-cols-4 dark:bg-slate-800">
+                  <TabsTrigger value="personal" className="flex gap-2 dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">Personal Info</span>
                     <span className="sm:hidden">Info</span>
                   </TabsTrigger>
-                  <TabsTrigger value="security" className="flex gap-2">
+                  <TabsTrigger value="security" className="flex gap-2 dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">
                     <Shield className="h-4 w-4" />
                     <span className="hidden sm:inline">Security</span>
                     <span className="sm:hidden">Security</span>
                   </TabsTrigger>
-                  <TabsTrigger value="notifications" className="flex gap-2">
+                  <TabsTrigger value="notifications" className="flex gap-2 dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">
                     <Bell className="h-4 w-4" />
                     <span className="hidden sm:inline">Notifications</span>
                     <span className="sm:hidden">Alerts</span>
                   </TabsTrigger>
-                  <TabsTrigger value="preferences" className="flex gap-2">
+                  <TabsTrigger value="preferences" className="flex gap-2 dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">
                     <Settings className="h-4 w-4" />
                     <span className="hidden sm:inline">Preferences</span>
                     <span className="sm:hidden">Prefs</span>
@@ -411,26 +507,26 @@ export default function ProfilePage() {
 
                 {/* Personal Information Tab */}
                 <TabsContent value="personal">
-                  <Card>
+                  <Card className="dark:bg-slate-800 dark:border-slate-700">
                     <CardHeader>
-                      <CardTitle>Personal Information</CardTitle>
-                      <CardDescription>Manage your personal information and contact details</CardDescription>
+                      <CardTitle className="dark:text-white">Personal Information</CardTitle>
+                      <CardDescription className="dark:text-slate-400">Manage your personal information and contact details</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
+                          <Label htmlFor="name" className="dark:text-white">Full Name</Label>
                           <Input
                             id="name"
                             name="name"
                             value={formData.name}
                             onChange={handleInputChange}
                             disabled={!editMode}
-                            className={editMode ? "border-blue-300" : ""}
+                            className={`${editMode ? "border-blue-300 dark:border-blue-600" : ""} dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="email">Email Address</Label>
+                          <Label htmlFor="email" className="dark:text-white">Email Address</Label>
                           <Input
                             id="email"
                             name="email"
@@ -438,43 +534,43 @@ export default function ProfilePage() {
                             value={formData.email}
                             onChange={handleInputChange}
                             disabled={!editMode}
-                            className={editMode ? "border-blue-300" : ""}
+                            className={`${editMode ? "border-blue-300 dark:border-blue-600" : ""} dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
                           />
                         </div>
                       </div>
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label htmlFor="phone">Phone Number</Label>
+                          <Label htmlFor="phone" className="dark:text-white">Phone Number</Label>
                           <Input
                             id="phone"
                             name="phone"
                             value={formData.phone}
                             onChange={handleInputChange}
                             disabled={!editMode}
-                            className={editMode ? "border-blue-300" : ""}
+                            className={`${editMode ? "border-blue-300 dark:border-blue-600" : ""} dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="department">Department</Label>
+                          <Label htmlFor="department" className="dark:text-white">Department</Label>
                           <Input
                             id="department"
                             name="department"
                             value={formData.department}
                             onChange={handleInputChange}
                             disabled={!editMode}
-                            className={editMode ? "border-blue-300" : ""}
+                            className={`${editMode ? "border-blue-300 dark:border-blue-600" : ""} dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="licenseNumber">License Number</Label>
+                        <Label htmlFor="licenseNumber" className="dark:text-white">License Number</Label>
                         <Input
                           id="licenseNumber"
                           name="licenseNumber"
                           value={formData.licenseNumber}
                           onChange={handleInputChange}
                           disabled={!editMode}
-                          className={editMode ? "border-blue-300" : ""}
+                          className={`${editMode ? "border-blue-300 dark:border-blue-600" : ""} dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
                         />
                       </div>
                     </CardContent>
@@ -486,8 +582,8 @@ export default function ProfilePage() {
                           exit={{ opacity: 0, height: 0 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <CardFooter className="flex justify-end gap-2 border-t bg-slate-50 px-6 py-4">
-                            <Button variant="outline" onClick={handleCancelEdit}>
+                          <CardFooter className="flex justify-end gap-2 border-t bg-slate-50 dark:bg-slate-700 dark:border-slate-600 px-6 py-4">
+                            <Button variant="outline" onClick={handleCancelEdit} className="dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:hover:bg-slate-500">
                               Cancel
                             </Button>
                             <Button onClick={handleSavePersonalInfo}>
@@ -504,16 +600,16 @@ export default function ProfilePage() {
                 {/* Security Tab */}
                 <TabsContent value="security">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <Card>
+                    <Card className="dark:bg-slate-800 dark:border-slate-700">
                       <CardHeader>
-                        <CardTitle>Password</CardTitle>
-                        <CardDescription>Change your password and manage your account security</CardDescription>
+                        <CardTitle className="dark:text-white">Password</CardTitle>
+                        <CardDescription className="dark:text-slate-400">Change your password and manage your account security</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <Label htmlFor="currentPassword">Current Password</Label>
-                            <span className="text-xs text-slate-500">
+                            <Label htmlFor="currentPassword" className="dark:text-white">Current Password</Label>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
                               Last changed: {new Date(userData.securityInfo.lastPasswordChange).toLocaleDateString()}
                             </span>
                           </div>
@@ -524,13 +620,13 @@ export default function ProfilePage() {
                               type={showPassword ? "text" : "password"}
                               value={formData.currentPassword}
                               onChange={handleInputChange}
-                              className="pr-10"
+                              className="pr-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                             />
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="absolute right-0 top-0 h-full px-3 py-2 text-slate-400 hover:text-slate-600"
+                              className="absolute right-0 top-0 h-full px-3 py-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300"
                               onClick={() => setShowPassword(!showPassword)}
                             >
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -539,7 +635,7 @@ export default function ProfilePage() {
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="newPassword">New Password</Label>
+                          <Label htmlFor="newPassword" className="dark:text-white">New Password</Label>
                           <div className="relative">
                             <Input
                               id="newPassword"
@@ -547,13 +643,13 @@ export default function ProfilePage() {
                               type={showPassword ? "text" : "password"}
                               value={formData.newPassword}
                               onChange={handleInputChange}
-                              className="pr-10"
+                              className="pr-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                             />
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="absolute right-0 top-0 h-full px-3 py-2 text-slate-400 hover:text-slate-600"
+                              className="absolute right-0 top-0 h-full px-3 py-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300"
                               onClick={() => setShowPassword(!showPassword)}
                             >
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -563,7 +659,7 @@ export default function ProfilePage() {
                           {formData.newPassword && (
                             <div className="mt-2 space-y-1">
                               <div className="flex items-center justify-between">
-                                <span className="text-xs">Password Strength</span>
+                                <span className="text-xs dark:text-slate-400">Password Strength</span>
                                 <span className={`text-xs font-medium ${getPasswordStrengthLabel().color}`}>
                                   {getPasswordStrengthLabel().label}
                                 </span>
@@ -573,28 +669,28 @@ export default function ProfilePage() {
                                 className="h-1"
                                 indicatorClassName={getPasswordStrengthColor()}
                               />
-                              <ul className="mt-2 space-y-1 text-xs text-slate-500">
+                              <ul className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400">
                                 <li className="flex items-center gap-1">
                                   <Check
-                                    className={`h-3 w-3 ${formData.newPassword.length >= 8 ? "text-green-500" : "text-slate-300"}`}
+                                    className={`h-3 w-3 ${formData.newPassword.length >= 8 ? "text-green-500" : "text-slate-300 dark:text-slate-600"}`}
                                   />
                                   <span>At least 8 characters</span>
                                 </li>
                                 <li className="flex items-center gap-1">
                                   <Check
-                                    className={`h-3 w-3 ${/[A-Z]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300"}`}
+                                    className={`h-3 w-3 ${/[A-Z]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300 dark:text-slate-600"}`}
                                   />
                                   <span>At least one uppercase letter</span>
                                 </li>
                                 <li className="flex items-center gap-1">
                                   <Check
-                                    className={`h-3 w-3 ${/[0-9]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300"}`}
+                                    className={`h-3 w-3 ${/[0-9]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300 dark:text-slate-600"}`}
                                   />
                                   <span>At least one number</span>
                                 </li>
                                 <li className="flex items-center gap-1">
                                   <Check
-                                    className={`h-3 w-3 ${/[^A-Za-z0-9]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300"}`}
+                                    className={`h-3 w-3 ${/[^A-Za-z0-9]/.test(formData.newPassword) ? "text-green-500" : "text-slate-300 dark:text-slate-600"}`}
                                   />
                                   <span>At least one special character</span>
                                 </li>
@@ -603,13 +699,14 @@ export default function ProfilePage() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <Label htmlFor="confirmPassword" className="dark:text-white">Confirm New Password</Label>
                           <Input
                             id="confirmPassword"
                             name="confirmPassword"
                             type={showPassword ? "text" : "password"}
                             value={formData.confirmPassword}
                             onChange={handleInputChange}
+                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                           />
                           {formData.newPassword &&
                             formData.confirmPassword &&
@@ -618,7 +715,7 @@ export default function ProfilePage() {
                             )}
                         </div>
                       </CardContent>
-                      <CardFooter className="flex justify-between border-t px-6 py-4">
+                      <CardFooter className="flex justify-between border-t px-6 py-4 dark:border-slate-600">
                         <Button
                           variant="outline"
                           onClick={() => {
@@ -629,6 +726,7 @@ export default function ProfilePage() {
                               confirmPassword: "",
                             })
                           }}
+                          className="dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600"
                         >
                           Cancel
                         </Button>
@@ -648,52 +746,52 @@ export default function ProfilePage() {
                     </Card>
 
                     <div className="space-y-4">
-                      <Card>
+                      <Card className="dark:bg-slate-800 dark:border-slate-700">
                         <CardHeader>
-                          <CardTitle>Two-Factor Authentication</CardTitle>
-                          <CardDescription>Add an extra layer of security to your account</CardDescription>
+                          <CardTitle className="dark:text-white">Two-Factor Authentication</CardTitle>
+                          <CardDescription className="dark:text-slate-400">Add an extra layer of security to your account</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                              <div className="font-medium">Two-Factor Authentication</div>
-                              <div className="text-sm text-slate-500">Require a verification code when signing in</div>
+                              <div className="font-medium dark:text-white">Two-Factor Authentication</div>
+                              <div className="text-sm text-slate-500 dark:text-slate-400">Require a verification code when signing in</div>
                             </div>
                             <Switch checked={userData.twoFactorEnabled} />
                           </div>
-                          <Separator />
+                          <Separator className="dark:bg-slate-600" />
                           <div className="space-y-2">
-                            <h4 className="font-medium">Verification Methods</h4>
-                            <div className="rounded-lg border p-3">
+                            <h4 className="font-medium dark:text-white">Verification Methods</h4>
+                            <div className="rounded-lg border p-3 dark:border-slate-600 dark:bg-slate-700">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                  <div className="rounded-full bg-blue-100 p-2">
-                                    <Smartphone className="h-4 w-4 text-blue-600" />
+                                  <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-2">
+                                    <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                   </div>
                                   <div>
-                                    <div className="font-medium">Authenticator App</div>
-                                    <div className="text-xs text-slate-500">
+                                    <div className="font-medium dark:text-white">Authenticator App</div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">
                                       Use an authenticator app to get verification codes
                                     </div>
                                   </div>
                                 </div>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" className="dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:hover:bg-slate-500">
                                   Setup
                                 </Button>
                               </div>
                             </div>
-                            <div className="rounded-lg border p-3">
+                            <div className="rounded-lg border p-3 dark:border-slate-600 dark:bg-slate-700">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                  <div className="rounded-full bg-slate-100 p-2">
-                                    <Mail className="h-4 w-4 text-slate-600" />
+                                  <div className="rounded-full bg-slate-100 dark:bg-slate-600 p-2">
+                                    <Mail className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                                   </div>
                                   <div>
-                                    <div className="font-medium">Email</div>
-                                    <div className="text-xs text-slate-500">Receive verification codes via email</div>
+                                    <div className="font-medium dark:text-white">Email</div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">Receive verification codes via email</div>
                                   </div>
                                 </div>
-                                <Badge variant="outline" className="bg-green-50 text-green-700">
+                                <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300 dark:border-green-700">
                                   Active
                                 </Badge>
                               </div>
@@ -702,21 +800,21 @@ export default function ProfilePage() {
                         </CardContent>
                       </Card>
 
-                      <Card>
+                      <Card className="dark:bg-slate-800 dark:border-slate-700">
                         <CardHeader>
-                          <CardTitle>Recent Login Activity</CardTitle>
-                          <CardDescription>Monitor where your account is being accessed</CardDescription>
+                          <CardTitle className="dark:text-white">Recent Login Activity</CardTitle>
+                          <CardDescription className="dark:text-slate-400">Monitor where your account is being accessed</CardDescription>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-4">
                             {userData.securityInfo.loginHistory.map((login, index) => (
                               <div key={index} className="flex items-start gap-3">
-                                <div className="rounded-full bg-slate-100 p-2">
-                                  <Lock className="h-4 w-4 text-slate-600" />
+                                <div className="rounded-full bg-slate-100 dark:bg-slate-700 p-2">
+                                  <Lock className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                                 </div>
                                 <div className="flex-1">
-                                  <div className="font-medium">{login.device}</div>
-                                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                  <div className="font-medium dark:text-white">{login.device}</div>
+                                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                                     <span>{login.location}</span>
                                     <span>•</span>
                                     <span>
@@ -730,7 +828,7 @@ export default function ProfilePage() {
                                     {index === 0 && (
                                       <>
                                         <span>•</span>
-                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
+                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700">
                                           Current Session
                                         </Badge>
                                       </>
@@ -741,8 +839,8 @@ export default function ProfilePage() {
                             ))}
                           </div>
                         </CardContent>
-                        <CardFooter className="border-t px-6 py-4">
-                          <Button variant="outline" className="w-full">
+                        <CardFooter className="border-t px-6 py-4 dark:border-slate-600">
+                          <Button variant="outline" className="w-full dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600">
                             View All Activity
                           </Button>
                         </CardFooter>
@@ -751,112 +849,29 @@ export default function ProfilePage() {
                   </div>
                 </TabsContent>
 
-                {/* Notifications Tab */}
-                <TabsContent value="notifications">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Notification Preferences</CardTitle>
-                      <CardDescription>Manage how and when you receive notifications</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-4">
-                        <h3 className="font-medium">Notification Channels</h3>
-                        <div className="grid gap-4 md:grid-cols-3">
-                          <div className="rounded-lg border p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="rounded-full bg-blue-100 p-2">
-                                  <Mail className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div className="font-medium">Email</div>
-                              </div>
-                              <Switch checked={userData.notificationPreferences.email} />
-                            </div>
-                          </div>
-                          <div className="rounded-lg border p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="rounded-full bg-blue-100 p-2">
-                                  <Smartphone className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div className="font-medium">SMS</div>
-                              </div>
-                              <Switch checked={userData.notificationPreferences.sms} />
-                            </div>
-                          </div>
-                          <div className="rounded-lg border p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="rounded-full bg-blue-100 p-2">
-                                  <Bell className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div className="font-medium">In-App</div>
-                              </div>
-                              <Switch checked={userData.notificationPreferences.app} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="font-medium">Notification Types</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <div className="font-medium">Appointment Reminders</div>
-                              <div className="text-sm text-slate-500">
-                                Notifications about upcoming and changed appointments
-                              </div>
-                            </div>
-                            <Switch checked={userData.notificationPreferences.appointments} />
-                          </div>
-                          <Separator />
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <div className="font-medium">System Updates</div>
-                              <div className="text-sm text-slate-500">Important updates about the EHR system</div>
-                            </div>
-                            <Switch checked={userData.notificationPreferences.updates} />
-                          </div>
-                          <Separator />
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <div className="font-medium">Marketing & Newsletters</div>
-                              <div className="text-sm text-slate-500">News, features, and promotional content</div>
-                            </div>
-                            <Switch checked={userData.notificationPreferences.marketing} />
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-end border-t px-6 py-4">
-                      <Button>Save Preferences</Button>
-                    </CardFooter>
-                  </Card>
-                </TabsContent>
+                
 
                 {/* Preferences Tab */}
                 <TabsContent value="preferences">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <Card>
+                    <Card className="dark:bg-slate-800 dark:border-slate-700">
                       <CardHeader>
-                        <CardTitle>Display Preferences</CardTitle>
-                        <CardDescription>Customize how the dashboard appears to you</CardDescription>
+                        <CardTitle className="dark:text-white">Display Preferences</CardTitle>
+                        <CardDescription className="dark:text-slate-400">Customize how the dashboard appears to you</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
                         <div className="space-y-4">
-                          <h3 className="font-medium">Theme</h3>
+                          <h3 className="font-medium dark:text-white">Theme</h3>
                           <RadioGroup
-                            defaultValue={userData.displayPreferences.theme}
+                            value={theme}
+                            onValueChange={(val)=>setTheme(val as any)}
                             className="grid grid-cols-3 gap-4"
                           >
                             <div>
                               <RadioGroupItem value="light" id="theme-light" className="sr-only peer" />
                               <Label
                                 htmlFor="theme-light"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
                               >
                                 <Sun className="mb-3 h-6 w-6" />
                                 <span>Light</span>
@@ -866,7 +881,7 @@ export default function ProfilePage() {
                               <RadioGroupItem value="dark" id="theme-dark" className="sr-only peer" />
                               <Label
                                 htmlFor="theme-dark"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
                               >
                                 <Moon className="mb-3 h-6 w-6" />
                                 <span>Dark</span>
@@ -876,7 +891,7 @@ export default function ProfilePage() {
                               <RadioGroupItem value="system" id="theme-system" className="sr-only peer" />
                               <Label
                                 htmlFor="theme-system"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
                               >
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -900,10 +915,10 @@ export default function ProfilePage() {
                           </RadioGroup>
                         </div>
 
-                        <Separator />
+                        <Separator className="dark:bg-slate-600" />
 
                         <div className="space-y-4">
-                          <h3 className="font-medium">Color Scheme</h3>
+                          <h3 className="font-medium dark:text-white">Color Scheme</h3>
                           <RadioGroup
                             defaultValue={userData.displayPreferences.colorScheme}
                             className="grid grid-cols-3 gap-4"
@@ -912,7 +927,7 @@ export default function ProfilePage() {
                               <RadioGroupItem value="blue" id="color-blue" className="sr-only peer" />
                               <Label
                                 htmlFor="color-blue"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
                               >
                                 <div className="mb-3 h-6 w-6 rounded-full bg-blue-600" />
                                 <span>Blue</span>
@@ -922,7 +937,7 @@ export default function ProfilePage() {
                               <RadioGroupItem value="green" id="color-green" className="sr-only peer" />
                               <Label
                                 htmlFor="color-green"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
                               >
                                 <div className="mb-3 h-6 w-6 rounded-full bg-green-600" />
                                 <span>Green</span>
@@ -932,7 +947,7 @@ export default function ProfilePage() {
                               <RadioGroupItem value="purple" id="color-purple" className="sr-only peer" />
                               <Label
                                 htmlFor="color-purple"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600"
+                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
                               >
                                 <div className="mb-3 h-6 w-6 rounded-full bg-purple-600" />
                                 <span>Purple</span>
@@ -941,23 +956,23 @@ export default function ProfilePage() {
                           </RadioGroup>
                         </div>
 
-                        <Separator />
+                        <Separator className="dark:bg-slate-600" />
 
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                              <div className="font-medium">Compact Mode</div>
-                              <div className="text-sm text-slate-500">
+                              <div className="font-medium dark:text-white">Compact Mode</div>
+                              <div className="text-sm text-slate-500 dark:text-slate-400">
                                 Reduce spacing and padding throughout the interface
                               </div>
                             </div>
                             <Switch checked={userData.displayPreferences.compactMode} />
                           </div>
-                          <Separator />
+                          <Separator className="dark:bg-slate-600" />
                           <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                              <div className="font-medium">Enable Animations</div>
-                              <div className="text-sm text-slate-500">
+                              <div className="font-medium dark:text-white">Enable Animations</div>
+                              <div className="text-sm text-slate-500 dark:text-slate-400">
                                 Show animations and transitions in the interface
                               </div>
                             </div>
@@ -965,22 +980,22 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       </CardContent>
-                      <CardFooter className="flex justify-end border-t px-6 py-4">
+                      <CardFooter className="flex justify-end border-t px-6 py-4 dark:border-slate-600">
                         <Button>Save Preferences</Button>
                       </CardFooter>
                     </Card>
 
-                    <Card>
+                    <Card className="dark:bg-slate-800 dark:border-slate-700">
                       <CardHeader>
-                        <CardTitle>Account Management</CardTitle>
-                        <CardDescription>Manage your account settings and data</CardDescription>
+                        <CardTitle className="dark:text-white">Account Management</CardTitle>
+                        <CardDescription className="dark:text-slate-400">Manage your account settings and data</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
                         <div className="space-y-4">
-                          <h3 className="font-medium">Data & Privacy</h3>
-                          <div className="rounded-lg border p-4">
+                          <h3 className="font-medium dark:text-white">Data & Privacy</h3>
+                          <div className="rounded-lg border p-4 dark:border-slate-600 dark:bg-slate-700">
                             <div className="flex items-center gap-3">
-                              <div className="rounded-full bg-blue-100 p-2">
+                              <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-2">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
                                   width="16"
@@ -991,7 +1006,7 @@ export default function ProfilePage() {
                                   strokeWidth="2"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
-                                  className="text-blue-600"
+                                  className="text-blue-600 dark:text-blue-400"
                                 >
                                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                   <polyline points="7 10 12 15 17 10" />
@@ -999,30 +1014,30 @@ export default function ProfilePage() {
                                 </svg>
                               </div>
                               <div className="flex-1">
-                                <div className="font-medium">Download Your Data</div>
-                                <div className="text-sm text-slate-500">
+                                <div className="font-medium dark:text-white">Download Your Data</div>
+                                <div className="text-sm text-slate-500 dark:text-slate-400">
                                   Get a copy of your personal data in a machine-readable format
                                 </div>
                               </div>
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" className="dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:hover:bg-slate-500">
                                 Request
                               </Button>
                             </div>
                           </div>
                         </div>
 
-                        <Separator />
+                        <Separator className="dark:bg-slate-600" />
 
                         <div className="space-y-4">
-                          <h3 className="font-medium">Danger Zone</h3>
-                          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                          <h3 className="font-medium dark:text-white">Danger Zone</h3>
+                          <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
                             <div className="flex items-center gap-3">
-                              <div className="rounded-full bg-red-100 p-2">
-                                <Trash2 className="h-4 w-4 text-red-600" />
+                              <div className="rounded-full bg-red-100 dark:bg-red-900 p-2">
+                                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                               </div>
                               <div className="flex-1">
-                                <div className="font-medium">Delete Account</div>
-                                <div className="text-sm text-slate-700">
+                                <div className="font-medium dark:text-white">Delete Account</div>
+                                <div className="text-sm text-slate-700 dark:text-slate-300">
                                   Permanently delete your account and all associated data
                                 </div>
                               </div>
@@ -1035,22 +1050,22 @@ export default function ProfilePage() {
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="outline"
-                                className="w-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                                className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300 dark:bg-slate-700 dark:border-slate-600"
                               >
                                 <AlertTriangle className="mr-2 h-4 w-4" />
                                 Deactivate Account
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="dark:bg-slate-800 dark:border-slate-700">
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Deactivate Your Account?</AlertDialogTitle>
-                                <AlertDialogDescription>
+                                <AlertDialogTitle className="dark:text-white">Deactivate Your Account?</AlertDialogTitle>
+                                <AlertDialogDescription className="dark:text-slate-400">
                                   Your account will be temporarily deactivated. You can reactivate it at any time by
                                   signing in again. During deactivation, your profile will not be visible to others.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel className="dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600">Cancel</AlertDialogCancel>
                                 <AlertDialogAction className="bg-red-600 hover:bg-red-700">
                                   Deactivate
                                 </AlertDialogAction>

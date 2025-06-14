@@ -29,7 +29,7 @@ import { useMobile } from "@/hooks/use-mobile"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 
 const FullPageLoader = () => (
-  <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+  <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -45,7 +45,7 @@ const FullPageLoader = () => (
         transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
         className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
       />
-      <p className="mt-4 text-sm text-slate-600">Cargando personal...</p>
+      <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Cargando personal...</p>
     </motion.div>
   </div>
 )
@@ -103,22 +103,22 @@ export default function StaffManagementPage() {
   const roleIcons = {
     physician: <Stethoscope className="h-4 w-4" />,
     receptionist: <ClipboardList className="h-4 w-4" />,
-    laboratory: <Flask className="h-4 w-4" />,
+    lab_technician: <Flask className="h-4 w-4" />,
     patient: <UserCheck className="h-4 w-4" />,
   }
 
   const roleColors = {
-    physician: "bg-blue-100 text-blue-800",
-    receptionist: "bg-purple-100 text-purple-800",
-    laboratory: "bg-green-100 text-green-800",
-    patient: "bg-amber-100 text-amber-800",
+    physician: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+    receptionist: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+    lab_technician: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+    patient: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300",
   }
 
   const statusColors = {
-    active: "bg-emerald-100 text-emerald-800",
-    inactive: "bg-slate-100 text-slate-800",
-    on_leave: "bg-amber-100 text-amber-800",
-    registered: "bg-cyan-100 text-cyan-800",
+    active: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300",
+    inactive: "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300",
+    on_leave: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300",
+    registered: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300",
   }
 
   const getFilteredStaff = () => {
@@ -165,7 +165,7 @@ export default function StaffManagementPage() {
     { title: "Total Staff", value: staffList.length, icon: <Users className="h-4 w-4" /> },
     { title: "Physicians", value: staffList.filter((s) => s.role === "physician").length, icon: <Stethoscope className="h-4 w-4" /> },
     { title: "Receptionists", value: staffList.filter((s) => s.role === "receptionist").length, icon: <ClipboardList className="h-4 w-4" /> },
-    { title: "Laboratory", value: staffList.filter((s) => s.role === "laboratory").length, icon: <Flask className="h-4 w-4" /> },
+    { title: "Laboratory", value: staffList.filter((s) => s.role === "lab_technician").length, icon: <Flask className="h-4 w-4" /> },
     { title: "Patients", value: staffList.filter((s) => s.role === "patient").length, icon: <UserCheck className="h-4 w-4" /> },
   ]
 
@@ -174,7 +174,7 @@ export default function StaffManagementPage() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-900">
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       <motion.div
@@ -189,11 +189,11 @@ export default function StaffManagementPage() {
           className="flex items-center justify-between mb-4"
         >
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <Button variant="ghost" size="icon" className="md:hidden dark:text-white dark:hover:bg-slate-800" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle Menu</span>
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Gestión de Personal</h1>
+            <h1 className="text-3xl font-bold tracking-tight dark:text-white">Gestión de Personal</h1>
           </div>
           <Button onClick={() => handleOpenAddStaff("physician")} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white gap-2">
             <UserPlus className="h-4 w-4" /> Añadir Personal
@@ -202,13 +202,13 @@ export default function StaffManagementPage() {
 
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {statsData.map((stat, index) => (
-            <Card key={index} className="overflow-hidden">
+            <Card key={index} className="overflow-hidden dark:bg-slate-800 dark:border-slate-700">
               <CardContent className="p-6 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-sm font-medium text-muted-foreground dark:text-slate-400">{stat.title}</p>
+                  <p className="text-2xl font-bold dark:text-white">{stat.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
+                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300">
                   {stat.icon}
                 </div>
               </CardContent>
@@ -218,36 +218,36 @@ export default function StaffManagementPage() {
 
         <motion.div variants={itemVariants} className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
             <Input
               placeholder="Buscar por nombre, email..."
-              className="pl-9"
+              className="pl-9 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-2 items-center">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Filter className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
             <Select value={selectedRole} onValueChange={setSelectedRole}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                 <SelectValue placeholder="Filtrar por rol" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los roles</SelectItem>
-                <SelectItem value="physician">Médicos</SelectItem>
-                <SelectItem value="receptionist">Recepcionistas</SelectItem>
-                <SelectItem value="laboratory">Laboratorio</SelectItem>
-                <SelectItem value="patient">Pacientes</SelectItem>
+              <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                <SelectItem value="all" className="dark:text-white dark:focus:bg-slate-700">Todos los roles</SelectItem>
+                <SelectItem value="physician" className="dark:text-white dark:focus:bg-slate-700">Médicos</SelectItem>
+                <SelectItem value="receptionist" className="dark:text-white dark:focus:bg-slate-700">Recepcionistas</SelectItem>
+                <SelectItem value="lab_technician" className="dark:text-white dark:focus:bg-slate-700">Laboratorio</SelectItem>
+                <SelectItem value="patient" className="dark:text-white dark:focus:bg-slate-700">Pacientes</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card>
+          <Card className="dark:bg-slate-800 dark:border-slate-700">
             <CardHeader className="pb-3">
-              <CardTitle>Personal de la Clínica</CardTitle>
-              <CardDescription>{filteredStaff.length} miembros encontrados</CardDescription>
+              <CardTitle className="dark:text-white">Personal de la Clínica</CardTitle>
+              <CardDescription className="dark:text-slate-400">{filteredStaff.length} miembros encontrados</CardDescription>
             </CardHeader>
             <CardContent>
               <StaffTable

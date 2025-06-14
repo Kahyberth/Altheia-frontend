@@ -266,7 +266,7 @@ export default function PatientsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -282,14 +282,14 @@ export default function PatientsPage() {
             transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
             className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
           />
-          <p className="mt-4 text-sm text-slate-600">Loading patient records...</p>
+          <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">Loading patient records...</p>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+    <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-900">
       {/* Sidebar */}
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
@@ -302,66 +302,66 @@ export default function PatientsPage() {
           <motion.div initial="hidden" animate="show" variants={container} className="mx-auto max-w-7xl space-y-6">
             {/* Page Title */}
             <motion.div variants={item} className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold tracking-tight">Patients</h1>
-              <p className="text-sm text-slate-500">Manage and view patient records</p>
+              <h1 className="text-2xl font-bold tracking-tight dark:text-white">Patients</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Manage and view patient records</p>
             </motion.div>
 
             {/* Patient Actions and Filters */}
             <motion.div variants={item}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative w-full max-w-md">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500 dark:text-slate-400" />
                   <Input
                     type="search"
                     placeholder="Search patients by name, ID, or email..."
-                    className="w-full bg-white pl-8 focus-visible:ring-blue-500"
+                    className="w-full bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white pl-8 focus-visible:ring-blue-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="w-[140px] bg-white">
+                    <SelectTrigger className="w-[140px] bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
+                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                      <SelectItem value="all" className="dark:text-white dark:focus:bg-slate-700">All Statuses</SelectItem>
+                      <SelectItem value="active" className="dark:text-white dark:focus:bg-slate-700">Active</SelectItem>
+                      <SelectItem value="inactive" className="dark:text-white dark:focus:bg-slate-700">Inactive</SelectItem>
+                      <SelectItem value="critical" className="dark:text-white dark:focus:bg-slate-700">Critical</SelectItem>
                     </SelectContent>
                   </Select>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="bg-white">
+                      <Button variant="outline" className="bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700">
                         <Filter className="mr-2 h-4 w-4" />
                         More Filters
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel>Filter By</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
+                    <DropdownMenuContent align="end" className="w-56 dark:bg-slate-800 dark:border-slate-700">
+                      <DropdownMenuLabel className="dark:text-white">Filter By</DropdownMenuLabel>
+                      <DropdownMenuSeparator className="dark:bg-slate-600" />
                       <div className="p-2">
                         <div className="mb-2 space-y-1">
-                          <label className="text-xs font-medium">Gender</label>
+                          <label className="text-xs font-medium dark:text-white">Gender</label>
                           <div className="flex items-center space-x-2">
                             <Checkbox id="gender-male" />
-                            <label htmlFor="gender-male" className="text-sm">
+                            <label htmlFor="gender-male" className="text-sm dark:text-white">
                               Male
                             </label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Checkbox id="gender-female" />
-                            <label htmlFor="gender-female" className="text-sm">
+                            <label htmlFor="gender-female" className="text-sm dark:text-white">
                               Female
                             </label>
                           </div>
                         </div>
                         <div className="mb-2 space-y-1">
-                          <label className="text-xs font-medium">Age Range</label>
+                          <label className="text-xs font-medium dark:text-white">Age Range</label>
                           <div className="grid grid-cols-2 gap-2">
-                            <Input type="number" placeholder="Min" className="h-8" />
-                            <Input type="number" placeholder="Max" className="h-8" />
+                            <Input type="number" placeholder="Min" className="h-8 dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
+                            <Input type="number" placeholder="Max" className="h-8 dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                           </div>
                         </div>
                         <div className="pt-2">
@@ -372,11 +372,11 @@ export default function PatientsPage() {
                       </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <div className="flex items-center gap-1 rounded-md border bg-white p-1">
+                  <div className="flex items-center gap-1 rounded-md border bg-white dark:bg-slate-800 dark:border-slate-700 p-1">
                     <Button
                       variant={viewMode === "grid" ? "default" : "ghost"}
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 dark:text-white"
                       onClick={() => setViewMode("grid")}
                     >
                       <svg
@@ -401,7 +401,7 @@ export default function PatientsPage() {
                     <Button
                       variant={viewMode === "list" ? "default" : "ghost"}
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 dark:text-white"
                       onClick={() => setViewMode("list")}
                     >
                       <svg
@@ -437,16 +437,16 @@ export default function PatientsPage() {
             {/* Patient Results */}
             <motion.div variants={item}>
               <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   Showing <span className="font-medium">{filteredPatients.length}</span> patients
                 </p>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="h-8 gap-1 bg-white">
+                  <Button variant="outline" size="sm" className="h-8 gap-1 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700">
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                     <span>Sort</span>
                     <ChevronDown className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="outline" size="sm" className="h-8 gap-1 bg-white">
+                  <Button variant="outline" size="sm" className="h-8 gap-1 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700">
                     <Download className="h-3.5 w-3.5" />
                     <span>Export</span>
                   </Button>
@@ -463,7 +463,7 @@ export default function PatientsPage() {
                 {filteredPatients.map((patient) => (
                   <motion.div key={patient.id} whileHover={{ y: -5, transition: { duration: 0.2 } }} className="h-full">
                     <Card
-                      className={`h-full cursor-pointer overflow-hidden transition-all hover:shadow-md ${
+                      className={`h-full cursor-pointer overflow-hidden transition-all hover:shadow-md dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-slate-700/50 ${
                         selectedPatient === patient.id ? "ring-2 ring-blue-500" : ""
                       }`}
                       onClick={() => setSelectedPatient(patient.id)}
@@ -491,63 +491,63 @@ export default function PatientsPage() {
                                 }
                                 className={
                                   patient.status === "Active"
-                                    ? "bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700"
+                                    ? "bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
                                     : patient.status === "Critical"
                                       ? ""
-                                      : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700"
+                                      : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
                                 }
                               >
                                 {patient.status}
                               </Badge>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 dark:text-white dark:hover:bg-slate-700">
                                     <MoreHorizontal className="h-4 w-4" />
                                     <span className="sr-only">More options</span>
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem>View details</DropdownMenuItem>
-                                  <DropdownMenuItem>Edit patient</DropdownMenuItem>
-                                  <DropdownMenuItem>Schedule appointment</DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-red-600">Archive patient</DropdownMenuItem>
+                                <DropdownMenuContent align="end" className="dark:bg-slate-800 dark:border-slate-700">
+                                  <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">View details</DropdownMenuItem>
+                                  <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Edit patient</DropdownMenuItem>
+                                  <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Schedule appointment</DropdownMenuItem>
+                                  <DropdownMenuSeparator className="dark:bg-slate-600" />
+                                  <DropdownMenuItem className="text-red-600 dark:text-red-400 dark:focus:bg-slate-700">Archive patient</DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
                           </div>
                           <div className="flex flex-col items-center p-4 pt-0 text-center">
-                            <Avatar className="h-20 w-20 border-4 border-white shadow">
+                            <Avatar className="h-20 w-20 border-4 border-white dark:border-slate-700 shadow">
                               <AvatarImage src={patient.avatar || "/placeholder.svg"} alt={patient.name} />
-                              <AvatarFallback>
+                              <AvatarFallback className="dark:bg-slate-700 dark:text-white">
                                 {patient.name
                                   .split(" ")
                                   .map((n: string) => n[0])
                                   .join("")}
                               </AvatarFallback>
                             </Avatar>
-                            <h3 className="mt-3 text-lg font-semibold">{patient.name}</h3>
-                            <p className="text-sm text-slate-500">
+                            <h3 className="mt-3 text-lg font-semibold dark:text-white">{patient.name}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
                               {patient.age} • {patient.gender}
                             </p>
-                            <p className="mt-1 text-xs font-medium text-slate-400">{patient.id}</p>
+                            <p className="mt-1 text-xs font-medium text-slate-400 dark:text-slate-500">{patient.id}</p>
                           </div>
                         </div>
-                        <div className="border-t p-4">
+                        <div className="border-t dark:border-slate-700 p-4">
                           <div className="grid grid-cols-1 gap-3">
                             <div className="flex items-start gap-2">
-                              <Mail className="mt-0.5 h-4 w-4 text-slate-400" />
-                              <span className="text-xs">{patient.email}</span>
+                              <Mail className="mt-0.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                              <span className="text-xs dark:text-slate-300">{patient.email}</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <Phone className="mt-0.5 h-4 w-4 text-slate-400" />
-                              <span className="text-xs">{patient.phone}</span>
+                              <Phone className="mt-0.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                              <span className="text-xs dark:text-slate-300">{patient.phone}</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <Calendar className="mt-0.5 h-4 w-4 text-slate-400" />
+                              <Calendar className="mt-0.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
                               <div className="flex flex-col">
-                                <span className="text-xs">Next Appointment</span>
-                                <span className="text-xs font-medium">
+                                <span className="text-xs dark:text-slate-300">Next Appointment</span>
+                                <span className="text-xs font-medium dark:text-slate-200">
                                   {new Date(patient.nextAppointment).toLocaleDateString()}
                                 </span>
                               </div>
@@ -556,7 +556,7 @@ export default function PatientsPage() {
                           {patient.conditions.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-1">
                               {patient.conditions.map((condition: string, index: number) => (
-                                <Badge key={index} variant="secondary" className="bg-slate-100 text-xs">
+                                <Badge key={index} variant="secondary" className="bg-slate-100 text-xs dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
                                   {condition}
                                 </Badge>
                               ))}
@@ -569,26 +569,26 @@ export default function PatientsPage() {
                 ))}
               </motion.div>
             ) : (
-              <motion.div variants={item} className="overflow-hidden rounded-lg border bg-white">
+              <motion.div variants={item} className="overflow-hidden rounded-lg border bg-white dark:bg-slate-800 dark:border-slate-700">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b bg-slate-50">
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Patient</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">ID</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Contact</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Last Visit</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Next Appointment</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Actions</th>
+                      <tr className="border-b bg-slate-50 dark:bg-slate-700 dark:border-slate-600">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Patient</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">ID</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Contact</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Last Visit</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Next Appointment</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredPatients.map((patient, index) => (
                         <motion.tr
                           key={patient.id}
-                          className={`border-b transition-colors hover:bg-slate-50 ${
-                            selectedPatient === patient.id ? "bg-blue-50" : ""
+                          className={`border-b transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700 ${
+                            selectedPatient === patient.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
                           }`}
                           onClick={() => setSelectedPatient(patient.id)}
                           whileHover={{ backgroundColor: "rgba(241, 245, 249, 1)" }}
@@ -600,7 +600,7 @@ export default function PatientsPage() {
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
                                 <AvatarImage src={patient.avatar || "/placeholder.svg"} alt={patient.name} />
-                                <AvatarFallback>
+                                <AvatarFallback className="dark:bg-slate-700 dark:text-white">
                                   {patient.name
                                     .split(" ")
                                     .map((n: string) => n[0])
@@ -608,17 +608,17 @@ export default function PatientsPage() {
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-medium">{patient.name}</p>
-                                <p className="text-xs text-slate-500">
+                                <p className="font-medium dark:text-white">{patient.name}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                   {patient.age} • {patient.gender}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm">{patient.id}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm dark:text-slate-300">{patient.id}</td>
                           <td className="whitespace-nowrap px-4 py-3">
-                            <div className="text-sm">{patient.email}</div>
-                            <div className="text-xs text-slate-500">{patient.phone}</div>
+                            <div className="text-sm dark:text-slate-300">{patient.email}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">{patient.phone}</div>
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">
                             <Badge
@@ -631,35 +631,35 @@ export default function PatientsPage() {
                               }
                               className={
                                 patient.status === "Active"
-                                  ? "bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700"
+                                  ? "bg-blue-50 text-blue-700 hover:bg-blue-50 hover:text-blue-700 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
                                   : patient.status === "Critical"
                                     ? ""
-                                    : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700"
+                                    : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
                               }
                             >
                               {patient.status}
                             </Badge>
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm">
+                          <td className="whitespace-nowrap px-4 py-3 text-sm dark:text-slate-300">
                             {new Date(patient.lastVisit).toLocaleDateString()}
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm">
+                          <td className="whitespace-nowrap px-4 py-3 text-sm dark:text-slate-300">
                             {new Date(patient.nextAppointment).toLocaleDateString()}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 dark:text-white dark:hover:bg-slate-700">
                                   <MoreHorizontal className="h-4 w-4" />
                                   <span className="sr-only">More options</span>
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit patient</DropdownMenuItem>
-                                <DropdownMenuItem>Schedule appointment</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600">Archive patient</DropdownMenuItem>
+                              <DropdownMenuContent align="end" className="dark:bg-slate-800 dark:border-slate-700">
+                                <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">View details</DropdownMenuItem>
+                                <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Edit patient</DropdownMenuItem>
+                                <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Schedule appointment</DropdownMenuItem>
+                                <DropdownMenuSeparator className="dark:bg-slate-600" />
+                                <DropdownMenuItem className="text-red-600 dark:text-red-400 dark:focus:bg-slate-700">Archive patient</DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </td>
@@ -675,13 +675,13 @@ export default function PatientsPage() {
             {filteredPatients.length === 0 && (
               <motion.div
                 variants={item}
-                className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-white p-8 text-center"
+                className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-white dark:bg-slate-800 dark:border-slate-700 p-8 text-center"
               >
-                <div className="rounded-full bg-slate-100 p-3">
-                  <Search className="h-6 w-6 text-slate-400" />
+                <div className="rounded-full bg-slate-100 dark:bg-slate-700 p-3">
+                  <Search className="h-6 w-6 text-slate-400 dark:text-slate-500" />
                 </div>
-                <h3 className="mt-4 text-lg font-medium">No patients found</h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <h3 className="mt-4 text-lg font-medium dark:text-white">No patients found</h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   We couldn't find any patients matching your search criteria.
                 </p>
                 <Button className="mt-4" onClick={() => setSearchQuery("")}>

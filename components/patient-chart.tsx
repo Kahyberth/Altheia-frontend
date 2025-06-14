@@ -15,6 +15,15 @@ import {
   Cell,
   Legend,
 } from "recharts"
+import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Users, TrendingUp, Activity, BarChart3 } from "lucide-react"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -46,6 +55,8 @@ const COLORS = ["#0284c7", "#0369a1", "#075985", "#0c4a6e"]
 
 export function PatientChart() {
   const [activeTab, setActiveTab] = useState("age")
+  const [chartType, setChartType] = useState("bar")
+  const [selectedMetric, setSelectedMetric] = useState("age")
 
   const chartVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -61,123 +72,129 @@ export function PatientChart() {
     },
   }
 
+  const getCurrentData = () => {
+    switch (selectedMetric) {
+      case "age":
+        return ageData
+      case "gender":
+        return genderData
+      case "visits":
+        return insuranceData
+      default:
+        return ageData
+    }
+  }
+
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="age" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="age">Age</TabsTrigger>
-          <TabsTrigger value="gender">Gender</TabsTrigger>
-          <TabsTrigger value="insurance">Insurance</TabsTrigger>
-        </TabsList>
-
-        <div className="mt-4 h-[300px]">
-          <TabsContent value="age" className="h-full">
-            <motion.div
-              key="age"
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              variants={chartVariants}
-              className="h-full"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ageData} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-                      border: "none",
-                    }}
-                    cursor={{ fill: "#f8fafc" }}
-                  />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="gender" className="h-full">
-            <motion.div
-              key="gender"
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              variants={chartVariants}
-              className="h-full"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={genderData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={2}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {genderData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-                      border: "none",
-                    }}
-                  />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="insurance" className="h-full">
-            <motion.div
-              key="insurance"
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              variants={chartVariants}
-              className="h-full"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={insuranceData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {insuranceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-                      border: "none",
-                    }}
-                  />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
-            </motion.div>
-          </TabsContent>
+    <div className="space-y-6">
+      {/* Chart Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={chartType === "bar" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setChartType("bar")}
+            className="dark:border-slate-600 dark:text-white dark:hover:bg-slate-700"
+          >
+            <BarChart3 className="h-4 w-4 mr-1" />
+            Barras
+          </Button>
+          <Button
+            variant={chartType === "pie" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setChartType("pie")}
+            className="dark:border-slate-600 dark:text-white dark:hover:bg-slate-700"
+          >
+            <PieChart className="h-4 w-4 mr-1" />
+            Circular
+          </Button>
         </div>
-      </Tabs>
+        <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+          <SelectTrigger className="w-48 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+            <SelectItem value="age" className="dark:text-white dark:focus:bg-slate-700">Distribución por Edad</SelectItem>
+            <SelectItem value="gender" className="dark:text-white dark:focus:bg-slate-700">Distribución por Género</SelectItem>
+            <SelectItem value="visits" className="dark:text-white dark:focus:bg-slate-700">Visitas Mensuales</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Chart Container */}
+      <div className="h-80 w-full p-4 rounded-lg border bg-white dark:bg-slate-800 dark:border-slate-700">
+        <ResponsiveContainer width="100%" height="100%">
+          {chartType === "bar" ? (
+            <BarChart data={getCurrentData()}>
+              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+              <XAxis 
+                dataKey="name" 
+                className="text-xs"
+                tick={{ fill: 'currentColor' }}
+              />
+              <YAxis 
+                className="text-xs"
+                tick={{ fill: 'currentColor' }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--background)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  color: 'var(--foreground)'
+                }}
+              />
+              <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          ) : (
+            <PieChart>
+              <Pie
+                data={getCurrentData()}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {getCurrentData().map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--background)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  color: 'var(--foreground)'
+                }}
+              />
+            </PieChart>
+          )}
+        </ResponsiveContainer>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border dark:border-slate-700">
+          <Users className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-blue-900 dark:text-blue-300">
+            {getCurrentData().reduce((sum, item) => sum + item.value, 0)}
+          </p>
+          <p className="text-sm text-blue-700 dark:text-blue-400">Total Pacientes</p>
+        </div>
+        <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border dark:border-slate-700">
+          <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-green-900 dark:text-green-300">+12%</p>
+          <p className="text-sm text-green-700 dark:text-green-400">Crecimiento</p>
+        </div>
+        <div className="text-center p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border dark:border-slate-700">
+          <Activity className="h-8 w-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-purple-900 dark:text-purple-300">89%</p>
+          <p className="text-sm text-purple-700 dark:text-purple-400">Satisfacción</p>
+        </div>
+      </div>
     </div>
   )
 }

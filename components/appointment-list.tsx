@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Clock, MoreVertical, CheckCircle2, X, Calendar, Video } from "lucide-react"
+import { Clock, MoreVertical, CheckCircle2, X, Calendar, Video, ChevronRight } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -85,108 +85,77 @@ export function AppointmentList() {
     setExpandedAppointment(expandedAppointment === id ? null : id)
   }
 
+
+
   return (
     <div className="space-y-3">
-      {appointments.map((appointment) => (
+      {appointments.map((appointment, index) => (
         <motion.div
           key={appointment.id}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="rounded-lg border bg-white"
+          transition={{ delay: index * 0.1 }}
+          className="group flex items-center gap-3 p-3 rounded-lg border bg-white dark:bg-slate-800 dark:border-slate-700 hover:shadow-sm transition-all cursor-pointer"
+          onClick={() => toggleExpand(appointment.id)}
         >
-          <div
-            className="flex items-center justify-between p-3 cursor-pointer"
-            onClick={() => toggleExpand(appointment.id)}
-          >
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border">
-                <AvatarImage src={appointment.patient.avatar || "/placeholder.svg"} alt={appointment.patient.name} />
-                <AvatarFallback>{appointment.patient.initials}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{appointment.patient.name}</p>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <Clock className="h-3 w-3" />
-                  <span>{appointment.time}</span>
-                  <span>•</span>
-                  <span>{appointment.duration}</span>
-                </div>
-              </div>
+          <div className="relative">
+                         <Avatar className="h-10 w-10">
+               <AvatarImage src={appointment.patient.avatar} alt={appointment.patient.name} />
+               <AvatarFallback className="bg-blue-500 text-white">
+                 {appointment.patient.initials}
+               </AvatarFallback>
+             </Avatar>
+            <div className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white dark:border-slate-800 ${
+              appointment.status === "confirmed" ? "bg-green-500" :
+              appointment.status === "pending" ? "bg-yellow-500" :
+              appointment.status === "cancelled" ? "bg-red-500" : "bg-gray-500"
+            }`} />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                {appointment.patient.name}
+              </p>
+              <time className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
+                {appointment.time}
+              </time>
             </div>
-            <div className="flex items-center gap-2">
-              {appointment.isVirtual && (
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50">
-                  <Video className="mr-1 h-3 w-3" />
-                  Virtual
-                </Badge>
-              )}
-              <Badge
-                variant={appointment.status === "confirmed" ? "outline" : "secondary"}
-                className={
-                  appointment.status === "confirmed"
-                    ? "bg-green-50 text-green-700 hover:bg-green-50"
-                    : "bg-amber-50 text-amber-700 hover:bg-amber-50"
-                }
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                {appointment.type}
+              </p>
+              <Badge 
+                variant="secondary" 
+                className={`text-xs ${
+                  appointment.status === "confirmed" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" :
+                  appointment.status === "pending" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" :
+                  appointment.status === "cancelled" ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" :
+                  "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                }`}
               >
-                {appointment.status === "confirmed" ? "Confirmed" : "Pending"}
+                {appointment.status}
               </Badge>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
-                    <span className="sr-only">More options</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>View details</DropdownMenuItem>
-                  <DropdownMenuItem>Reschedule</DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600">Cancel</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
-
-          <AnimatePresence>
-            {expandedAppointment === appointment.id && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="border-t p-3 bg-slate-50">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs font-medium text-slate-500">Appointment Type</p>
-                      <p className="text-sm">{appointment.type}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500">Patient ID</p>
-                      <p className="text-sm">P-{1000 + appointment.id}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <Button size="sm" variant="outline" className="h-8 gap-1 text-green-600">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Check In</span>
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-8 gap-1 text-blue-600">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>Reschedule</span>
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-8 gap-1 text-red-600">
-                      <X className="h-3.5 w-3.5" />
-                      <span>Cancel</span>
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-slate-700"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </motion.div>
       ))}
+      
+      {appointments.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <Calendar className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">No hay citas programadas</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Las citas de hoy aparecerán aquí</p>
+        </div>
+      )}
     </div>
   )
 }

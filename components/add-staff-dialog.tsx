@@ -2,9 +2,14 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Stethoscope, ClipboardList, FlaskRoundIcon as Flask, UserCheck, CalendarIcon } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
+import { getClinicInformation } from "@/services/clinic.service"
+import { Services, EpsOffered } from "@/types/clinic"
+import { createPhysicianService, createReceptionistService, createLabTechnicianService, createPatientService } from "@/services/auth.service"
+import { addToast } from "@heroui/react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -33,18 +38,161 @@ interface AddStaffDialogProps {
 }
 
 export function AddStaffDialog({ open, onOpenChange, staffType, onStaffTypeChange }: AddStaffDialogProps) {
+  const { user } = useAuth()
   const [date, setDate] = useState<Date>()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [clinicServices, setClinicServices] = useState<Services[]>([])
+  const [clinicEps, setClinicEps] = useState<EpsOffered[]>([])
+  const [loadingServices, setLoadingServices] = useState(false)
+  const [clinicId, setClinicId] = useState<string>("")
+
+  // Fetch clinic services when dialog opens
+  useEffect(() => {
+    const fetchClinicServices = async () => {
+      if (!open || !user?.id) return
+      
+      setLoadingServices(true)
+      try {
+        const clinicRes = await getClinicInformation(user.id)
+        const services = clinicRes.data?.information?.["services offered"] || []
+        const eps = clinicRes.data?.information?.["eps offered"] || []
+        const clinicIdFromRes = clinicRes.data?.clinic?.id || clinicRes.data?.information?.clinic_id
+        setClinicServices(services)
+        setClinicEps(eps)
+        setClinicId(clinicIdFromRes || "")
+      } catch (error) {
+        console.error("Error fetching clinic data:", error)
+        setClinicServices([])
+        setClinicEps([])
+        setClinicId("")
+      } finally {
+        setLoadingServices(false)
+      }
+    }
+
+    fetchClinicServices()
+  }, [open, user?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const formData = new FormData(e.target as HTMLFormElement)
+      
+      // Common fields for all staff types
+      const genderValue = formData.get('gender') as string
+      const genderMap: Record<string, string> = {
+        'M': 'male',
+        'F': 'female', 
+        'O': 'other'
+      }
+      
+      const commonData = {
+        name: formData.get('name') as string,
+        email: formData.get('email') as string,
+        password: formData.get('password') as string,
+        gender: genderMap[genderValue] || genderValue,
+        phone: formData.get('phone') as string,
+        document_number: formData.get('document_number') as string,
+        date_of_birth: date ? date.toISOString().split('T')[0] : '',
+        clinic_id: clinicId
+      }
 
-    setIsSubmitting(false)
-    onOpenChange(false)
+      let response
+      
+      switch (staffType) {
+        case 'physician':
+          const physicianData = {
+            ...commonData,
+            physician_specialty: formData.get('physician_specialty') as string,
+            license_number: formData.get('license_number') as string
+          }
+          console.log('Creating physician with data:', physicianData)
+          response = await createPhysicianService(physicianData)
+          break
+          
+        case 'receptionist':
+          const receptionistData = {
+            name: commonData.name,
+            email: commonData.email,
+            password: commonData.password,
+            gender: commonData.gender,
+            phone: commonData.phone,
+            document_number: commonData.document_number,
+            clinic_id: commonData.clinic_id
+          }
+          console.log('Creating receptionist with data:', receptionistData)
+          response = await createReceptionistService(receptionistData)
+          break
+          
+        case 'laboratory':
+          const labTechnicianData = {
+            name: commonData.name,
+            email: commonData.email,
+            password: commonData.password,
+            gender: commonData.gender,
+            phone: commonData.phone,
+            document_number: commonData.document_number,
+            clinic_id: commonData.clinic_id
+          }
+          console.log('Creating lab technician with data:', labTechnicianData)
+          response = await createLabTechnicianService(labTechnicianData)
+          break
+          
+        case 'patient':
+          const patientData = {
+            name: commonData.name,
+            email: commonData.email,
+            password: commonData.password,
+            gender: commonData.gender,
+            phone: commonData.phone,
+            document_number: commonData.document_number,
+            date_of_birth: commonData.date_of_birth,
+            address: formData.get('address') as string,
+            eps: formData.get('eps') as string,
+            blood_type: formData.get('blood_type') as string,
+            clinic_id: commonData.clinic_id
+          }
+          console.log('Creating patient with data:', patientData)
+          response = await createPatientService(patientData)
+          break
+          
+        default:
+          throw new Error('Invalid staff type')
+      }
+
+      console.log('Staff created successfully:', response)
+      
+      // Show success toast
+      const staffTypeNames = {
+        physician: 'Médico',
+        receptionist: 'Recepcionista', 
+        laboratory: 'Personal de laboratorio',
+        patient: 'Paciente'
+      }
+      
+      addToast({
+        title: `${staffTypeNames[staffType as keyof typeof staffTypeNames]} creado`,
+        description: `El ${staffTypeNames[staffType as keyof typeof staffTypeNames].toLowerCase()} se registró correctamente en el sistema.`
+      })
+      
+      onOpenChange(false)
+      
+      // Reset form
+      setDate(undefined)
+      
+    } catch (error) {
+      console.error('Error creating staff:', error)
+      
+      // Show error toast
+      addToast({
+        title: "Error al crear personal",
+        description: "No se pudo registrar el personal. Por favor intente nuevamente."
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const formVariants = {
@@ -87,10 +235,10 @@ export function AddStaffDialog({ open, onOpenChange, staffType, onStaffTypeChang
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto dark:bg-slate-800 dark:border-slate-700">
         <DialogHeader>
-          <DialogTitle>{getFormTitle()}</DialogTitle>
-          <DialogDescription>{getFormDescription()}</DialogDescription>
+          <DialogTitle className="dark:text-white">{getFormTitle()}</DialogTitle>
+          <DialogDescription className="dark:text-slate-400">{getFormDescription()}</DialogDescription>
         </DialogHeader>
 
         <Tabs value={staffType} onValueChange={onStaffTypeChange} className="w-full">
@@ -126,30 +274,30 @@ export function AddStaffDialog({ open, onOpenChange, staffType, onStaffTypeChang
               {/* Common fields for all staff types */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nombre completo</Label>
-                  <Input id="name" placeholder="Nombre completo" required />
+                  <Label htmlFor="name" className="dark:text-slate-300">Nombre completo</Label>
+                  <Input id="name" name="name" placeholder="Nombre completo" required className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Correo electrónico</Label>
-                  <Input id="email" type="email" placeholder="correo@ejemplo.com" required />
+                  <Label htmlFor="email" className="dark:text-slate-300">Correo electrónico</Label>
+                  <Input id="email" name="email" type="email" placeholder="correo@ejemplo.com" required className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Input id="password" type="password" placeholder="••••••••" required />
+                  <Label htmlFor="password" className="dark:text-slate-300">Contraseña</Label>
+                  <Input id="password" name="password" type="password" placeholder="••••••••" required className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Género</Label>
-                  <Select required>
-                    <SelectTrigger id="gender">
+                  <Label htmlFor="gender" className="dark:text-slate-300">Género</Label>
+                  <Select name="gender" required>
+                    <SelectTrigger id="gender" className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                       <SelectValue placeholder="Seleccionar género" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Masculino</SelectItem>
-                      <SelectItem value="female">Femenino</SelectItem>
-                      <SelectItem value="other">Otro</SelectItem>
+                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                      <SelectItem value="M" className="dark:text-white dark:focus:bg-slate-700">Masculino</SelectItem>
+                      <SelectItem value="F" className="dark:text-white dark:focus:bg-slate-700">Femenino</SelectItem>
+                      <SelectItem value="O" className="dark:text-white dark:focus:bg-slate-700">Otro</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -157,29 +305,50 @@ export function AddStaffDialog({ open, onOpenChange, staffType, onStaffTypeChang
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Teléfono</Label>
-                  <Input id="phone" placeholder="+57 300 123 4567" required />
+                  <Label htmlFor="phone" className="dark:text-slate-300">Teléfono</Label>
+                  <Input id="phone" name="phone" placeholder="+57 300 123 4567" required className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="document_number">Número de documento</Label>
-                  <Input id="document_number" placeholder="1234567890" required />
+                  <Label htmlFor="document_number" className="dark:text-slate-300">Número de documento</Label>
+                  <Input id="document_number" name="document_number" placeholder="1234567890" required className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="date_of_birth">Fecha de nacimiento</Label>
+                <Label htmlFor="date_of_birth" className="dark:text-slate-300">Fecha de nacimiento</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                      className={cn("w-full justify-start text-left font-normal dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600", !date && "text-muted-foreground dark:text-slate-400")}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {date ? format(date, "PPP", { locale: es }) : "Seleccionar fecha"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                  <PopoverContent className="w-auto p-0 dark:bg-slate-800 dark:border-slate-700">
+                    <Calendar 
+                      mode="single" 
+                      selected={date} 
+                      onSelect={setDate} 
+                      initialFocus
+                      captionLayout="dropdown"
+                      fromYear={1900}
+                      toYear={new Date().getFullYear()}
+                      classNames={{
+                        dropdown_root: "dark:bg-slate-700 dark:border-slate-600",
+                        dropdown: "dark:bg-slate-700 dark:text-white",
+                        caption_label: "dark:text-white",
+                        nav: "dark:text-white",
+                        button_previous: "dark:text-white dark:hover:bg-slate-700",
+                        button_next: "dark:text-white dark:hover:bg-slate-700",
+                        table: "dark:text-white",
+                        weekday: "dark:text-slate-400",
+                        day: "dark:text-white dark:hover:bg-slate-700",
+                        today: "dark:bg-slate-700 dark:text-white",
+                        selected: "dark:bg-blue-600 dark:text-white"
+                      }}
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -189,27 +358,29 @@ export function AddStaffDialog({ open, onOpenChange, staffType, onStaffTypeChang
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="physician_specialty">Especialidad</Label>
-                      <Select required>
-                        <SelectTrigger id="physician_specialty">
-                          <SelectValue placeholder="Seleccionar especialidad" />
+                      <Label htmlFor="physician_specialty" className="dark:text-slate-300">Servicio/Especialidad</Label>
+                      <Select name="physician_specialty" required disabled={loadingServices}>
+                        <SelectTrigger id="physician_specialty" className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                          <SelectValue placeholder={loadingServices ? "Cargando servicios..." : "Seleccionar servicio"} />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cardiology">Cardiología</SelectItem>
-                          <SelectItem value="dermatology">Dermatología</SelectItem>
-                          <SelectItem value="neurology">Neurología</SelectItem>
-                          <SelectItem value="pediatrics">Pediatría</SelectItem>
-                          <SelectItem value="orthopedics">Ortopedia</SelectItem>
-                          <SelectItem value="gynecology">Ginecología</SelectItem>
-                          <SelectItem value="ophthalmology">Oftalmología</SelectItem>
-                          <SelectItem value="psychiatry">Psiquiatría</SelectItem>
-                          <SelectItem value="general">Medicina General</SelectItem>
+                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                          {clinicServices.length > 0 ? (
+                            clinicServices.map((service) => (
+                              <SelectItem key={service.id} value={service.id} className="dark:text-white dark:focus:bg-slate-700">
+                                {service.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-services" disabled className="dark:text-slate-400">
+                              No hay servicios configurados
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="license_number">Número de licencia</Label>
-                      <Input id="license_number" placeholder="MED2024-123" required />
+                      <Label htmlFor="license_number" className="dark:text-slate-300">Número de licencia</Label>
+                      <Input id="license_number" name="license_number" placeholder="MED2024-123" required className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                     </div>
                   </div>
                 </>
@@ -220,42 +391,46 @@ export function AddStaffDialog({ open, onOpenChange, staffType, onStaffTypeChang
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="address">Dirección</Label>
-                      <Input id="address" placeholder="Calle 123 #45-67" required />
+                      <Label htmlFor="address" className="dark:text-slate-300">Dirección</Label>
+                      <Input id="address" name="address" placeholder="Calle 123 #45-67" required className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="eps">EPS</Label>
-                      <Select required>
-                        <SelectTrigger id="eps">
-                          <SelectValue placeholder="Seleccionar EPS" />
+                      <Label htmlFor="eps" className="dark:text-slate-300">EPS</Label>
+                      <Select name="eps" required disabled={loadingServices}>
+                        <SelectTrigger id="eps" className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                          <SelectValue placeholder={loadingServices ? "Cargando EPS..." : "Seleccionar EPS"} />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="salud_total">Salud Total</SelectItem>
-                          <SelectItem value="nueva_eps">Nueva EPS</SelectItem>
-                          <SelectItem value="sura">Sura</SelectItem>
-                          <SelectItem value="compensar">Compensar</SelectItem>
-                          <SelectItem value="famisanar">Famisanar</SelectItem>
-                          <SelectItem value="sanitas">Sanitas</SelectItem>
-                          <SelectItem value="coomeva">Coomeva</SelectItem>
+                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                          {clinicEps.length > 0 ? (
+                            clinicEps.map((eps) => (
+                              <SelectItem key={eps.id} value={eps.id} className="dark:text-white dark:focus:bg-slate-700">
+                                {eps.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-eps" disabled className="dark:text-slate-400">
+                              No hay EPS configuradas
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="blood_type">Tipo de sangre</Label>
-                    <Select required>
-                      <SelectTrigger id="blood_type">
+                    <Label htmlFor="blood_type" className="dark:text-slate-300">Tipo de sangre</Label>
+                    <Select name="blood_type" required>
+                      <SelectTrigger id="blood_type" className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                         <SelectValue placeholder="Seleccionar tipo de sangre" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A+">A+</SelectItem>
-                        <SelectItem value="A-">A-</SelectItem>
-                        <SelectItem value="B+">B+</SelectItem>
-                        <SelectItem value="B-">B-</SelectItem>
-                        <SelectItem value="AB+">AB+</SelectItem>
-                        <SelectItem value="AB-">AB-</SelectItem>
-                        <SelectItem value="O+">O+</SelectItem>
-                        <SelectItem value="O-">O-</SelectItem>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                        <SelectItem value="A+" className="dark:text-white dark:focus:bg-slate-700">A+</SelectItem>
+                        <SelectItem value="A-" className="dark:text-white dark:focus:bg-slate-700">A-</SelectItem>
+                        <SelectItem value="B+" className="dark:text-white dark:focus:bg-slate-700">B+</SelectItem>
+                        <SelectItem value="B-" className="dark:text-white dark:focus:bg-slate-700">B-</SelectItem>
+                        <SelectItem value="AB+" className="dark:text-white dark:focus:bg-slate-700">AB+</SelectItem>
+                        <SelectItem value="AB-" className="dark:text-white dark:focus:bg-slate-700">AB-</SelectItem>
+                        <SelectItem value="O+" className="dark:text-white dark:focus:bg-slate-700">O+</SelectItem>
+                        <SelectItem value="O-" className="dark:text-white dark:focus:bg-slate-700">O-</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
