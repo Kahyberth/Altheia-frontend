@@ -14,7 +14,7 @@ export default function Providers({ children }: ProvidersProps) {
     <AuthProvider>
       <ThemeProvider>
         <HeroUIProvider>
-          <ToastProvider placement="top-right" />
+          <ToastProvider placement="bottom-right" />
           {children}
         </HeroUIProvider>
       </ThemeProvider>

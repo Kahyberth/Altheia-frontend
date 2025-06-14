@@ -3,6 +3,7 @@ export interface IUser {
   name: string;
   email: string;
   role: string;
+  clinic_id?: string;
 }
 
 export interface ILoginResponse {
@@ -68,5 +69,38 @@ export interface NavigationItem {
   requiredPermissions?: string[];
 }
 
+
+export interface IUpdatePatientRequest {
+  name?: string;
+  phone?: string;
+  eps?: string;
+  address?: string;
+  password?: string;
+}
+
+export interface IUpdatePhysicianRequest {
+  name?: string;
+  phone?: string;
+  physician_specialty?: string;
+  password?: string;
+}
+
+export interface IUpdateReceptionistRequest {
+  name?: string;
+  phone?: string;
+  password?: string;
+}
+
+export interface IUpdateLabTechnicianRequest {
+  name?: string;
+  phone?: string;
+  password?: string;
+}
+
+export interface IUpdateOwnerRequest {
+  name?: string;
+  phone?: string;
+  password?: string;
+}
 
 

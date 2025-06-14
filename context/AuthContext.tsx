@@ -16,6 +16,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  clinic_id?: string;
 }
 
 interface AuthContextType {

@@ -9,7 +9,6 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
       { resource: 'users', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'patients', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'appointments', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'records', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'analytics', actions: ['read'] },
       { resource: 'clinic', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'staff', actions: ['create', 'read', 'update', 'delete'] }
@@ -96,6 +95,9 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
     ]
   }
 };
+
+
+
 
 export class RoleService {
   /**

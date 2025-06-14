@@ -186,7 +186,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden dark:bg-slate-800 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
         <div className="relative">
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-900" />
@@ -270,10 +270,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 </form>
               </TabsContent>
 
-              <TabsContent value="register" className="space-y-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
+              <TabsContent value="register" className="space-y-3">
+                <form onSubmit={handleSubmit} className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="name" className="dark:text-slate-300">Nombre completo *</Label>
                       <Input
                         id="name"
@@ -284,7 +284,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                         className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="document_number" className="dark:text-slate-300">Número de documento *</Label>
                       <Input
                         id="document_number"
@@ -297,53 +297,54 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="dark:text-slate-300">Dirección de correo eléctronico *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Ingrese su correo eléctronico"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      required
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="dark:text-slate-300">Contraseña *</Label>
-                    <div className="relative">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="email" className="dark:text-slate-300">Correo electrónico *</Label>
                       <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Crea una contraseña nueva"
-                        value={formData.password}
-                        onChange={(e) => handleInputChange("password", e.target.value)}
+                        id="email"
+                        type="email"
+                        placeholder="Ingrese su correo electrónico"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
                         required
                         className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent dark:hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                        )}
-                      </Button>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="password" className="dark:text-slate-300">Contraseña *</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Crea una contraseña nueva"
+                          value={formData.password}
+                          onChange={(e) => handleInputChange("password", e.target.value)}
+                          required
+                          className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent dark:hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="gender" className="dark:text-slate-300">Genero *</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="gender" className="dark:text-slate-300">Género *</Label>
                       <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
                         <SelectTrigger id="gender">
-                          <SelectValue placeholder="Seleccione un genero" />
+                          <SelectValue placeholder="Seleccione un género" />
                         </SelectTrigger>
                         <SelectContent>
                           {genderOptions.map((option) => (
@@ -354,7 +355,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="date_of_birth" className="dark:text-slate-300">Fecha de nacimiento *</Label>
                       <Input
                         id="date_of_birth"
@@ -365,34 +366,34 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                         className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       />
                     </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="phone" className="dark:text-slate-300">Número telefónico *</Label>
+                      <Input
+                        id="phone"
+                        placeholder="+57 320 123 4567"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange("phone", e.target.value)}
+                        required
+                        className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="dark:text-slate-300">Número teléfonico *</Label>
-                    <Input
-                      id="phone"
-                      placeholder="+57 320 123 4567"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      required
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor="address" className="dark:text-slate-300">Dirección residencial *</Label>
                     <Textarea
                       id="address"
-                      placeholder="Ingres la dirección de su residencia"
+                      placeholder="Ingrese la dirección de su residencia"
                       value={formData.address}
                       onChange={(e) => handleInputChange("address", e.target.value)}
                       required
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-none"
+                      rows={2}
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1">
                       <Label htmlFor="eps" className="dark:text-slate-300">EPS *</Label>
                       <Select value={formData.eps} onValueChange={(value) => handleInputChange("eps", value)}>
                         <SelectTrigger id="eps">
@@ -407,7 +408,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="blood_type" className="dark:text-slate-300">Tipo de sangre</Label>
                       <Select value={formData.blood_type} onValueChange={(value) => handleInputChange("blood_type", value)}>
                         <SelectTrigger id="blood_type">
@@ -422,28 +423,27 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="clinic" className="dark:text-slate-300">Clínica *</Label>
+                      <Select
+                        value={formData.clinic}
+                        onValueChange={(value) => handleInputChange("clinic", value)}
+                        disabled={!selectedEps}
+                      >
+                        <SelectTrigger id="clinic" className={!selectedEps ? "opacity-50" : ""}>
+                          <SelectValue placeholder={!selectedEps ? "Seleccione EPS primero" : "Seleccione clínica"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clinicOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="clinic" className="dark:text-slate-300">Clínica *</Label>
-                    <Select
-                      value={formData.clinic}
-                      onValueChange={(value) => handleInputChange("clinic", value)}
-                      disabled={!selectedEps}
-                    >
-                      <SelectTrigger id="clinic" className={!selectedEps ? "opacity-50" : ""}>
-                        <SelectValue placeholder={!selectedEps ? "Seleccione una EPS primero" : "Seleccione una clínica"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clinicOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {!selectedEps && <p className="text-xs text-slate-500 text-center dark:text-slate-400">Por favor seleccione una eps primero</p>}
-                  </div>
+                  {!selectedEps && <p className="text-xs text-slate-500 text-center dark:text-slate-400">Por favor seleccione una EPS primero</p>}
 
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (

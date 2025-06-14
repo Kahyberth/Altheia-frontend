@@ -1,4 +1,4 @@
-import { ClinicInformation, Services, EPS, PersonalInClinic, PatientByClinic } from "@/types/clinic"
+import { ClinicInformation, Services, EPS, PersonalInClinic, PatientByClinic, ClinicByClinicID } from "@/types/clinic"
 import apiClient from "@/fetch/apiClient"
 
 export const getClinicInformation = async (ownerId: string) => {
@@ -51,4 +51,9 @@ export const getPersonnelInClinic = async (clinicId: string) => {
 
 export const getPatientsInClinic = async (clinicId: string) => {
   return await apiClient.get<PatientByClinic[]>(`clinic/patients/${clinicId}`)
+}
+
+
+export const getClinicByClinicId = async (clinicId: string) => {
+  return await apiClient.get<ClinicByClinicID>(`clinic/${clinicId}`)
 }
