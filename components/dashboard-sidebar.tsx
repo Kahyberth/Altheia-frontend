@@ -130,7 +130,7 @@ export function DashboardSidebar({ open, setOpen }: DashboardSidebarProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => router.push("dashboard/profile")}>Perfil</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>Perfil</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={async () => {
                   try {

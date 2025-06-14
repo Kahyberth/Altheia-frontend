@@ -21,7 +21,7 @@ export default function NotFound() {
         </p>
 
         <div className="mt-8">
-          <Link href="/">
+          <Link href="/dashboard">
             <span className="inline-flex items-center gap-2 rounded-md bg-blue-600 dark:bg-blue-500 px-6 py-3 text-base font-medium text-white shadow-lg ring-1 ring-blue-700/10 dark:ring-blue-400/20 hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-colors duration-200">
               Volver al inicio
             </span>
