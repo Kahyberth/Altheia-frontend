@@ -1,36 +1,189 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Altheia Healthcare Management System
 
-## Getting Started
+<div align="center">
+  <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+</div>
 
-First, run the development server:
+## 🏥 About Altheia
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Altheia is a comprehensive healthcare management system designed to streamline clinic operations and improve patient care. Built with modern web technologies, it provides an intuitive interface for healthcare professionals to manage patients, appointments, staff, and clinic operations efficiently.
+
+### ✨ Key Features
+
+- **👥 Staff Management**: Complete personnel management for physicians, receptionists, lab technicians, and patients
+- **📅 Appointment Scheduling**: Advanced appointment booking and management system
+- **🏥 Patient Records**: Comprehensive patient information and medical history tracking
+- **📊 Analytics Dashboard**: Real-time insights and reporting for clinic performance
+- **🔐 Role-Based Access Control**: Secure access management with different permission levels
+- **🌙 Dark Mode Support**: Full dark/light theme support for better user experience
+- **📱 Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **🔄 Real-time Updates**: Live data synchronization across all users
+
+## 🚀 Tech Stack
+
+### Frontend
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Custom components with HeroUI integration
+- **State Management**: React Context API
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+
+### Backend Integration
+- **API Client**: Custom fetch wrapper with authentication
+- **Authentication**: JWT-based authentication system
+- **Data Fetching**: Server-side rendering with client-side hydration
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js 18+ 
+- npm, yarn, pnpm, or bun
+
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/kahyberth/altheia-frontend.git
+   cd altheia-frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   # or
+   bun install
+   ```
+
+3. **Environment Configuration**
+   Create a `.env.local` file in the root directory:
+   ```env
+   NEXT_PUBLIC_API_URL=your_backend_api_url
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   # or
+   bun dev
+   ```
+
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 🏗️ Project Structure
+
+```
+altheia-frontend/
+├── app/                    # Next.js App Router pages
+│   ├── dashboard/         # Dashboard pages
+│   │   ├── analytics/     # Analytics and reports
+│   │   ├── appointments/  # Appointment management
+│   │   ├── patients/      # Patient management
+│   │   ├── profile/       # User profile
+│   │   └── staff-management/ # Staff management
+│   ├── globals.css        # Global styles
+│   ├── layout.tsx         # Root layout
+│   ├── not-found.tsx      # 404 page
+│   └── page.tsx           # Landing page
+├── components/            # Reusable UI components
+│   ├── ui/               # Base UI components
+│   ├── auth-modal.tsx    # Authentication modal
+│   ├── dashboard-sidebar.tsx # Navigation sidebar
+│   └── ...               # Other components
+├── context/              # React Context providers
+│   ├── AuthContext.tsx   # Authentication context
+│   └── ThemeContext.tsx  # Theme management
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility functions
+├── services/             # API service functions
+├── types/                # TypeScript type definitions
+└── public/               # Static assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 👤 User Roles & Permissions
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🏥 Clinic Owner
+- Full system access
+- Staff management (hire/fire)
+- Clinic configuration
+- Analytics and reporting
+- Financial management
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 👨‍⚕️ Physician
+- Patient management
+- Appointment scheduling
+- Medical records access
+- Prescription management
+- Lab order creation
 
-## Learn More
+### 📞 Receptionist
+- Appointment booking
+- Patient registration
+- Basic patient information
+- Schedule management
 
-To learn more about Next.js, take a look at the following resources:
+### 🔬 Lab Technician
+- Lab order management
+- Test result entry
+- Equipment tracking
+- Quality control
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 🏥 Patient
+- Personal profile management
+- Appointment booking
+- Medical history viewing
+- Prescription tracking
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🎨 Features Overview
 
-## Deploy on Vercel
+### Dashboard
+- **Overview Cards**: Quick stats and metrics
+- **Recent Activity**: Latest system activities
+- **Quick Actions**: Fast access to common tasks
+- **Analytics Charts**: Visual data representation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Staff Management
+- **Personnel Directory**: Complete staff listing
+- **Role Assignment**: Flexible role management
+- **Performance Tracking**: Staff activity monitoring
+- **Scheduling**: Work schedule management
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Patient Management
+- **Patient Registry**: Comprehensive patient database
+- **Medical History**: Complete health records
+- **Insurance Management**: EPS and insurance tracking
+- **Communication**: Patient messaging system
+
+### Appointment System
+- **Calendar View**: Visual appointment scheduling
+- **Conflict Detection**: Automatic scheduling conflicts
+- **Reminders**: Automated appointment reminders
+- **Rescheduling**: Easy appointment modifications
+
+## 🔧 Development
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run type-check   # TypeScript type checking
+```
+
