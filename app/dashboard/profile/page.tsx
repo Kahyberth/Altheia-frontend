@@ -78,6 +78,7 @@ import {
 import { getClinicByClinicId } from "@/services/clinic.service";
 import apiClient from "@/fetch/apiClient";
 import { useTheme } from "@/context/ThemeContext";
+import { PhysicianOnly } from "@/guard/RoleGuard";
 
 const SAMPLE_USER_DATA = {
   id: "U-1001",
@@ -659,12 +660,14 @@ export default function ProfilePage() {
                               {userData.department}
                             </Badge>
                           )}
-                        <Badge
-                          variant="outline"
-                          className="bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
-                        >
-                          License: {userData.licenseNumber}
-                        </Badge>
+                        <PhysicianOnly>
+                          <Badge
+                            variant="outline"
+                            className="bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600"
+                          >
+                            License: {userData.licenseNumber}
+                          </Badge>
+                        </PhysicianOnly>
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-1">
@@ -738,7 +741,7 @@ export default function ProfilePage() {
             {/* Profile Tabs */}
             <motion.div variants={item}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-4 dark:bg-slate-800">
+                <TabsList className="grid w-full grid-cols-3 dark:bg-slate-800">
                   <TabsTrigger
                     value="personal"
                     className="flex gap-2 dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white"
@@ -1379,100 +1382,8 @@ export default function ProfilePage() {
                             </div>
                           </RadioGroup>
                         </div>
-
                         <Separator className="dark:bg-slate-600" />
-
-                        <div className="space-y-4">
-                          <h3 className="font-medium dark:text-white">
-                            Color Scheme
-                          </h3>
-                          <RadioGroup
-                            defaultValue={
-                              userData.displayPreferences.colorScheme
-                            }
-                            className="grid grid-cols-3 gap-4"
-                          >
-                            <div>
-                              <RadioGroupItem
-                                value="blue"
-                                id="color-blue"
-                                className="sr-only peer"
-                              />
-                              <Label
-                                htmlFor="color-blue"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
-                              >
-                                <div className="mb-3 h-6 w-6 rounded-full bg-blue-600" />
-                                <span>Blue</span>
-                              </Label>
-                            </div>
-                            <div>
-                              <RadioGroupItem
-                                value="green"
-                                id="color-green"
-                                className="sr-only peer"
-                              />
-                              <Label
-                                htmlFor="color-green"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
-                              >
-                                <div className="mb-3 h-6 w-6 rounded-full bg-green-600" />
-                                <span>Green</span>
-                              </Label>
-                            </div>
-                            <div>
-                              <RadioGroupItem
-                                value="purple"
-                                id="color-purple"
-                                className="sr-only peer"
-                              />
-                              <Label
-                                htmlFor="color-purple"
-                                className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:text-blue-600 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white"
-                              >
-                                <div className="mb-3 h-6 w-6 rounded-full bg-purple-600" />
-                                <span>Purple</span>
-                              </Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-
-                        <Separator className="dark:bg-slate-600" />
-
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <div className="font-medium dark:text-white">
-                                Compact Mode
-                              </div>
-                              <div className="text-sm text-slate-500 dark:text-slate-400">
-                                Reduce spacing and padding throughout the
-                                interface
-                              </div>
-                            </div>
-                            <Switch
-                              checked={userData.displayPreferences.compactMode}
-                            />
-                          </div>
-                          <Separator className="dark:bg-slate-600" />
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <div className="font-medium dark:text-white">
-                                Enable Animations
-                              </div>
-                              <div className="text-sm text-slate-500 dark:text-slate-400">
-                                Show animations and transitions in the interface
-                              </div>
-                            </div>
-                            <Switch
-                              checked={userData.displayPreferences.animations}
-                            />
-                          </div>
-                        </div>
                       </CardContent>
-                      <CardFooter className="flex justify-end border-t px-6 py-4 dark:border-slate-600">
-                        <Button>Save Preferences</Button>
-                      </CardFooter>
                     </Card>
 
                     <Card className="dark:bg-slate-800 dark:border-slate-700">
@@ -1485,50 +1396,6 @@ export default function ProfilePage() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        <div className="space-y-4">
-                          <h3 className="font-medium dark:text-white">
-                            Data & Privacy
-                          </h3>
-                          <div className="rounded-lg border p-4 dark:border-slate-600 dark:bg-slate-700">
-                            <div className="flex items-center gap-3">
-                              <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-2">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="text-blue-600 dark:text-blue-400"
-                                >
-                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                  <polyline points="7 10 12 15 17 10" />
-                                  <line x1="12" x2="12" y1="15" y2="3" />
-                                </svg>
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium dark:text-white">
-                                  Download Your Data
-                                </div>
-                                <div className="text-sm text-slate-500 dark:text-slate-400">
-                                  Get a copy of your personal data in a
-                                  machine-readable format
-                                </div>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:hover:bg-slate-500"
-                              >
-                                Request
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-
                         <Separator className="dark:bg-slate-600" />
 
                         <div className="space-y-4">
