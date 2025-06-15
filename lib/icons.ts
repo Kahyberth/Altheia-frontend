@@ -18,7 +18,8 @@ import {
   Users2,
   Stethoscope,
   HeartHandshake,
-  ClipboardCheck
+  ClipboardCheck,
+  FlaskConical
 } from "lucide-react";
 
 export const iconMap = {
@@ -41,7 +42,8 @@ export const iconMap = {
   Users2,
   Stethoscope,
   HeartHandshake,
-  ClipboardCheck
+  ClipboardCheck,
+  FlaskConical,
 };
 
 export type IconName = keyof typeof iconMap; 

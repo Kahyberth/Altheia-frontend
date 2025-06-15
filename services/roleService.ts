@@ -72,8 +72,8 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
     navigationItems: [
       { id: 'dashboard', label: 'Mi Panel', icon: 'LayoutDashboard', href: '/dashboard' },
       { id: 'appointments', label: 'Mis Citas', icon: 'Calendar', href: '/dashboard/appointments' },
-      { id: 'records', label: 'Mi Historial', icon: 'FileText', href: '/dashboard/records' },
-      { id: 'prescriptions', label: 'Mis Recetas', icon: 'Pill', href: '/dashboard/prescriptions' },
+      { id: 'records', label: 'Historial Clínico', icon: 'FileText', href: '/dashboard/patient-history' },
+      { id: 'lab-orders', label: 'Órdenes de Laboratorio', icon: 'FlaskConical', href: '/dashboard/lab-orders' },
       { id: 'profile', label: 'Mi Perfil', icon: 'User', href: '/dashboard/profile' }
     ]
   },

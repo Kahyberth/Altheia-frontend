@@ -73,7 +73,6 @@ export default function StaffManagementPage() {
     setIsDetailsOpen(true)
   }
 
-  // Fetch staff from backend
   useEffect(() => {
     const fetchStaff = async () => {
       if (!user?.id) return

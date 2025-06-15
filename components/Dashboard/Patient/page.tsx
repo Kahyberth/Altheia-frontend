@@ -7,12 +7,7 @@ import {
   Activity,
   FileText,
   User,
-  FlaskConical,
-  Clock,
-  MapPin,
-  CalendarSync,
-  CalendarX,
-  ChevronRight,
+  FlaskConical
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +15,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -32,11 +26,13 @@ import { useRouter } from "next/navigation";
 import { NextAppointmentCard } from "./next-appointment-card";
 import LabResults from "./lab-results";
 import { RecentActivity } from "@/components/recent-activity";
+import { ClinicalHistoryViewerPatient } from "./clinical-history-viewer-patient";
 
 export default function PatientDashboardPage() {
   const isMobile = useMobile();
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [showClinicalHistory, setShowClinicalHistory] = useState(false);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -47,24 +43,28 @@ export default function PatientDashboardPage() {
       icon: User,
       color: "bg-blue-50 text-blue-600",
       href: "profile",
+      action: () => router.push("/dashboard/profile"),
     },
     {
       title: "Citas",
       icon: Calendar,
       color: "bg-cyan-50 text-cyan-600",
       href: "appointments",
+      action: () => router.push("/dashboard/appointments"),
     },
     {
       title: "Historial Clínico",
       icon: FileText,
       color: "bg-amber-50 text-amber-600",
       href: "clinic-management",
+      action: () => setShowClinicalHistory(true),
     },
     {
       title: "Laboratorio",
       icon: FlaskConical,
       color: "bg-green-50 text-green-600",
       href: "laboratory",
+      action: () => router.push("/dashboard/laboratory"),
     },
   ];
 
@@ -93,7 +93,7 @@ export default function PatientDashboardPage() {
     show: {
       opacity: 1,
       y: 0,
-      transition: { type: "spring", stiffness: 300, damping: 24 },
+      transition: { type: "spring" as const, stiffness: 300, damping: 24 },
     },
   };
 
@@ -278,7 +278,7 @@ export default function PatientDashboardPage() {
                           key={i} 
                           variant="outline" 
                           className="h-28 flex flex-col items-center justify-center gap-3 p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group"
-                          onClick={() => router.push(`/dashboard/${action.href}`)}
+                          onClick={action.action}
                         >
                           <div className={`p-3 rounded-xl ${action.color} group-hover:scale-110 transition-transform duration-200`}>
                             <action.icon className="h-6 w-6" />
@@ -346,6 +346,13 @@ export default function PatientDashboardPage() {
           </div>
         </main>
       </div>
+
+      {/* Clinical History Modal */}
+      <ClinicalHistoryViewerPatient 
+        patientId={user?.id}
+        open={showClinicalHistory}
+        onOpenChange={setShowClinicalHistory}
+      />
     </div>
   );
 }
