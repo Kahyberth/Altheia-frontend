@@ -16,8 +16,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext"
 import { getAllEps, getClinicByEpsServices } from "@/services/clinic.service"
 import { addToast } from "@heroui/react"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 interface AuthModalProps {
   open: boolean
@@ -187,6 +185,16 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden dark:bg-slate-800 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="sr-only">
+          <DialogTitle>
+            {mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "login" 
+              ? "Ingresa a tu cuenta para continuar" 
+              : "Únete a nuestra plataforma de salud"}
+          </DialogDescription>
+        </DialogHeader>
         <div className="relative">
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-900" />
