@@ -20,9 +20,10 @@ import {
 interface DeleteAccountDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onDelete?: () => Promise<void>
 }
 
-export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
+export function DeleteAccountDialog({ open, onOpenChange, onDelete }: DeleteAccountDialogProps) {
   const [step, setStep] = useState(1)
   const [confirmText, setConfirmText] = useState("")
   const [confirmCheckboxes, setConfirmCheckboxes] = useState({
@@ -35,7 +36,6 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
 
   const handleClose = () => {
     onOpenChange(false)
-    // Reset state when dialog is closed
     setTimeout(() => {
       setStep(1)
       setConfirmText("")
@@ -61,13 +61,17 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
     }
   }
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
+    if (!onDelete) return;
+    
     setIsDeleting(true)
-    // Simulate account deletion process
-    setTimeout(() => {
-      setIsDeleting(false)
+    try {
+      await onDelete();
       setIsDeleted(true)
-    }, 2000)
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setIsDeleting(false)
+    }
   }
 
   const allCheckboxesChecked = Object.values(confirmCheckboxes).every(Boolean)
@@ -81,10 +85,10 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-red-600">
                 <Trash2 className="h-5 w-5" />
-                Delete Account
+                Eliminar cuenta
               </DialogTitle>
               <DialogDescription>
-                This action cannot be undone. Please read the information below carefully.
+                Esta acción no puede ser deshecha. Por favor, lee la información abajo cuidadosamente.
               </DialogDescription>
             </DialogHeader>
 
@@ -133,35 +137,35 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                     <div className="flex gap-3">
                       <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-600" />
                       <div className="space-y-2">
-                        <p className="font-medium text-amber-800">Important Information</p>
+                        <p className="font-medium text-amber-800">Información importante</p>
                         <ul className="space-y-1 text-sm text-amber-700">
-                          <li>• All your personal data will be permanently deleted</li>
-                          <li>• You will lose access to all your medical records in the system</li>
-                          <li>• Any scheduled appointments will be canceled</li>
-                          <li>• This action cannot be reversed</li>
+                          <li>• Todas tus datos personales serán eliminados permanentemente</li>
+                          <li>• Perderás acceso a todos tus registros médicos en el sistema</li>
+                          <li>• Cualquier cita programada será cancelada</li>
+                          <li>• Esta acción no puede ser deshecha</li>
                         </ul>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-sm text-slate-600">Before proceeding, please consider these alternatives:</p>
+                    <p className="text-sm text-slate-600">Antes de proceder, por favor considera estas alternativas:</p>
                     <div className="rounded-lg border p-3">
-                      <p className="font-medium">Temporarily Deactivate Your Account</p>
+                      <p className="font-medium">Desactivar tu cuenta temporalmente</p>
                       <p className="text-sm text-slate-500">
-                        You can reactivate your account at any time by signing in again.
+                        Puedes reactivar tu cuenta en cualquier momento ingresando nuevamente.
                       </p>
                     </div>
                     <div className="rounded-lg border p-3">
-                      <p className="font-medium">Update Your Notification Settings</p>
+                      <p className="font-medium">Actualizar tus ajustes de notificación</p>
                       <p className="text-sm text-slate-500">
-                        You can customize how and when you receive notifications.
+                        Puedes personalizar cómo y cuando recibes notificaciones.
                       </p>
                     </div>
                     <div className="rounded-lg border p-3">
-                      <p className="font-medium">Contact Support</p>
+                      <p className="font-medium">Contactar soporte</p>
                       <p className="text-sm text-slate-500">
-                        Our support team can help resolve any issues you're experiencing.
+                        Nuestro equipo de soporte puede ayudar a resolver cualquier problema que estés experimentando.
                       </p>
                     </div>
                   </div>
@@ -178,8 +182,8 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                   className="space-y-4"
                 >
                   <p className="text-sm text-slate-600">
-                    Please confirm that you understand the consequences of deleting your account by checking all boxes
-                    below:
+                    Por favor, confirma que entiendes los consecuencias de eliminar tu cuenta marcando todas las casillas
+                    abajo:
                   </p>
 
                   <div className="space-y-3">
@@ -196,10 +200,10 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                           htmlFor="confirm-data"
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          I understand that all my data will be permanently deleted
+                          Entiendo que todos mis datos serán eliminados permanentemente
                         </Label>
                         <p className="text-xs text-slate-500">
-                          Including personal information, medical records, and appointment history
+                          Incluyendo información personal, registros médicos y historial de citas
                         </p>
                       </div>
                     </div>
@@ -217,9 +221,9 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                           htmlFor="confirm-irreversible"
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          I understand that this action cannot be undone
+                          Entiendo que esta acción no puede ser deshecha
                         </Label>
-                        <p className="text-xs text-slate-500">Once deleted, your account cannot be recovered</p>
+                        <p className="text-xs text-slate-500">Una vez eliminada, tu cuenta no puede ser recuperada</p>
                       </div>
                     </div>
 
@@ -236,18 +240,18 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                           htmlFor="confirm-understand"
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          I understand that I will lose access to the MediSync EHR system
+                          Entiendo que perderé acceso al sistema MediSync EHR
                         </Label>
-                        <p className="text-xs text-slate-500">Including all features, services, and support</p>
+                        <p className="text-xs text-slate-500">Incluyendo todas las características, servicios y soporte</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="rounded-lg border-2 border-slate-100 bg-slate-50 p-4">
                     <p className="text-sm text-slate-600">
-                      <strong>Note on Data Retention:</strong> Some information may be retained for legal and compliance
-                      purposes in accordance with healthcare regulations. For more information, please refer to our
-                      Privacy Policy.
+                      <strong>Nota sobre la retención de datos:</strong> Alguna información puede ser retenida para
+                      fines legales y de cumplimiento en conformidad con las regulaciones de salud. Para más información,
+                      por favor, consulta nuestra Política de Privacidad.
                     </p>
                   </div>
                 </motion.div>
@@ -266,9 +270,9 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                     <div className="flex gap-3">
                       <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600" />
                       <div>
-                        <p className="font-medium text-red-800">Final Warning</p>
+                        <p className="font-medium text-red-800">Advertencia final</p>
                         <p className="text-sm text-red-700">
-                          You are about to permanently delete your account. This action cannot be undone.
+                          Estás a punto de eliminar tu cuenta permanentemente. Esta acción no puede ser deshecha.
                         </p>
                       </div>
                     </div>
@@ -276,7 +280,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
 
                   <div className="space-y-2">
                     <Label htmlFor="confirm-text" className="text-sm font-medium">
-                      To confirm, please type "delete my account" below:
+                      Para confirmar, por favor, escribe "eliminar mi cuenta" abajo:
                     </Label>
                     <Input
                       id="confirm-text"
@@ -285,7 +289,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                       className={confirmText && !confirmTextMatches ? "border-red-300 focus-visible:ring-red-400" : ""}
                     />
                     {confirmText && !confirmTextMatches && (
-                      <p className="text-xs text-red-500">Text does not match "delete my account"</p>
+                      <p className="text-xs text-red-500">El texto no coincide con "eliminar mi cuenta"</p>
                     )}
                   </div>
                 </motion.div>
@@ -295,11 +299,11 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
             <DialogFooter className="flex items-center justify-between gap-2">
               {step > 1 ? (
                 <Button type="button" variant="outline" onClick={handlePrevStep}>
-                  Back
+                  Volver
                 </Button>
               ) : (
                 <Button type="button" variant="outline" onClick={handleClose}>
-                  Cancel
+                  Cancelar
                 </Button>
               )}
 
@@ -311,7 +315,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                   onClick={handleNextStep}
                   disabled={step === 2 && !allCheckboxesChecked}
                 >
-                  {step === 1 ? "I Want To Delete My Account" : "Continue"}
+                  {step === 1 ? "Quiero eliminar mi cuenta" : "Continuar"}
                 </Button>
               ) : (
                 <Button
@@ -343,12 +347,12 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Deleting Account...
+                      Eliminando cuenta...
                     </>
                   ) : (
                     <>
                       <Trash2 className="h-4 w-4" />
-                      Permanently Delete Account
+                      Eliminar cuenta permanentemente
                     </>
                   )}
                 </Button>
@@ -365,9 +369,9 @@ export function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogP
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <Check className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="mb-2 text-xl font-semibold">Account Deleted</h2>
+            <h2 className="mb-2 text-xl font-semibold">Cuenta eliminada</h2>
             <p className="mb-6 text-slate-500">
-              Your account has been successfully deleted. All your personal data has been removed from our systems.
+              Tu cuenta ha sido eliminada exitosamente. Todos tus datos personales han sido eliminados de nuestros sistemas.
             </p>
             <Button onClick={handleClose}>Close</Button>
           </motion.div>
