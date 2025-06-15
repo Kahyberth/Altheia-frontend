@@ -39,11 +39,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -70,15 +76,19 @@ import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { addToast } from "@heroui/react";
-import { getClinicInformation } from "@/services/clinic.service";
 import {
   updateUserProfile,
-  getUserProfileByRole,
 } from "@/services/user.service";
 import { getClinicByClinicId } from "@/services/clinic.service";
 import apiClient from "@/fetch/apiClient";
 import { useTheme } from "@/context/ThemeContext";
 import { PhysicianOnly } from "@/guard/RoleGuard";
+import { 
+  loginActivityService, 
+  deleteAccountService, 
+  deactivateAccountService,
+  verifyDeleteAccountService 
+} from "@/services/auth.service";
 
 const SAMPLE_USER_DATA = {
   id: "U-1001",
@@ -140,6 +150,11 @@ export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginActivities, setLoginActivities] = useState<any[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [clinicEps, setClinicEps] = useState<Array<{id: string, name: string}>>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
   const { user, logout } = useAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -158,6 +173,78 @@ export default function ProfilePage() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const fetchLoginActivities = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoadingActivities(true);
+      const response = await loginActivityService(user.id);
+      const activities = response.data?.activities || [];
+      setLoginActivities(activities);
+    } catch (error) {
+      console.error('Error fetching login activities:', error);
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsDeleting(true);
+    
+      await verifyDeleteAccountService(user.id);
+
+      await deleteAccountService(user.id);
+      
+      addToast({
+        title: "Cuenta eliminada",
+        description: "Tu cuenta ha sido eliminada permanentemente.",
+      });
+      
+      await logout();
+      router.push("/");
+      
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      addToast({
+        title: "Error",
+        description: "No se pudo eliminar la cuenta. Inténtalo de nuevo.",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  const handleDeactivateAccount = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsDeactivating(true);
+      
+      await deactivateAccountService(user.id);
+      
+      addToast({
+        title: "Cuenta desactivada",
+        description: "Tu cuenta ha sido desactivada temporalmente. Puedes reactivarla iniciando sesión nuevamente.",
+      });
+      
+      await logout();
+      router.push("/");
+      
+    } catch (error) {
+      console.error('Error deactivating account:', error);
+      addToast({
+        title: "Error",
+        description: "No se pudo desactivar la cuenta. Inténtalo de nuevo.",
+      });
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -201,6 +288,9 @@ export default function ProfilePage() {
       try {
         const clinicRes = await getClinicByClinicId(user.clinic_id);
         const clinicData = clinicRes.data || clinicRes;
+
+        const clinicEpsData = clinicData.information?.["eps offered"] || [];
+        setClinicEps(clinicEpsData);
 
         let profileData = null;
         let roleSpecificData = null;
@@ -309,6 +399,7 @@ export default function ProfilePage() {
     };
 
     fetchProfile();
+    fetchLoginActivities();
   }, [user?.id, user?.name, user?.email, user?.role, user?.clinic_id]);
 
   useEffect(() => {
@@ -442,7 +533,6 @@ export default function ProfilePage() {
 
   const displayRole = (() => {
     const role = (userData.role || "").toLowerCase();
-    console.log(role);
     if (role === "owner" || role === "clinic_owner")
       return "Creador de la clínica";
     if (role === "patient") return "Paciente";
@@ -555,10 +645,10 @@ export default function ProfilePage() {
             {/* Page Title */}
             <motion.div variants={item} className="flex flex-col gap-1">
               <h1 className="text-2xl font-bold tracking-tight dark:text-white">
-                My Profile
+                Mi perfil
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Manage your account settings and preferences
+                Administra tus ajustes de cuenta y preferencias
               </p>
             </motion.div>
 
@@ -673,7 +763,7 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
                           <span>
-                            Joined{" "}
+                            Fecha de creación:{" "}
                             {new Date(userData.joinDate).toLocaleDateString(
                               "en-US",
                               {
@@ -687,7 +777,7 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
                           <span>
-                            Last active{" "}
+                            Última actividad{" "}
                             {new Date(userData.lastActive).toLocaleString(
                               "en-US",
                               {
@@ -714,11 +804,11 @@ export default function ProfilePage() {
                       >
                         {editMode ? (
                           <>
-                            <X className="h-4 w-4" /> Cancel Editing
+                            <X className="h-4 w-4" /> Cancelar edición
                           </>
                         ) : (
                           <>
-                            <Edit className="h-4 w-4" /> Edit Profile
+                            <Edit className="h-4 w-4" /> Editar perfil
                           </>
                         )}
                       </Button>
@@ -730,7 +820,7 @@ export default function ProfilePage() {
                           router.push("/");
                         }}
                       >
-                        <LogOut className="h-4 w-4" /> Sign Out
+                        <LogOut className="h-4 w-4" /> Cerrar sesión
                       </Button>
                     </div>
                   </div>
@@ -747,7 +837,7 @@ export default function ProfilePage() {
                     className="flex gap-2 dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white"
                   >
                     <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">Personal Info</span>
+                    <span className="hidden sm:inline">Información personal</span>
                     <span className="sm:hidden">Info</span>
                   </TabsTrigger>
                   <TabsTrigger
@@ -755,16 +845,16 @@ export default function ProfilePage() {
                     className="flex gap-2 dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white"
                   >
                     <Shield className="h-4 w-4" />
-                    <span className="hidden sm:inline">Security</span>
-                    <span className="sm:hidden">Security</span>
+                    <span className="hidden sm:inline">Seguridad</span>
+                    <span className="sm:hidden">Seguridad</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="preferences"
                     className="flex gap-2 dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white"
                   >
                     <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline">Preferences</span>
-                    <span className="sm:hidden">Prefs</span>
+                    <span className="hidden sm:inline">Preferencias</span>
+                    <span className="sm:hidden">Preferencias</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -773,10 +863,10 @@ export default function ProfilePage() {
                   <Card className="dark:bg-slate-800 dark:border-slate-700">
                     <CardHeader>
                       <CardTitle className="dark:text-white">
-                        Personal Information
+                        Información personal
                       </CardTitle>
                       <CardDescription className="dark:text-slate-400">
-                        Manage your personal information and contact details
+                        Administra tu información personal y detalles de contacto
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -874,18 +964,34 @@ export default function ProfilePage() {
                             <Label htmlFor="eps" className="dark:text-white">
                               EPS
                             </Label>
-                            <Input
-                              id="eps"
-                              name="eps"
+                            <Select
                               value={formData.eps}
-                              onChange={handleInputChange}
+                              onValueChange={(value) => 
+                                setFormData(prev => ({ ...prev, eps: value }))
+                              }
                               disabled={!editMode}
-                              className={`${
-                                editMode
-                                  ? "border-blue-300 dark:border-blue-600"
-                                  : ""
-                              } dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
-                            />
+                            >
+                              <SelectTrigger 
+                                className={`${
+                                  editMode
+                                    ? "border-blue-300 dark:border-blue-600"
+                                    : ""
+                                } dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
+                              >
+                                <SelectValue placeholder="Seleccionar EPS" />
+                              </SelectTrigger>
+                              <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                                {clinicEps.map((eps) => (
+                                  <SelectItem 
+                                    key={eps.id} 
+                                    value={eps.name}
+                                    className="dark:text-white dark:hover:bg-slate-700"
+                                  >
+                                    {eps.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         )}
                       </div>
@@ -940,14 +1046,14 @@ export default function ProfilePage() {
 
                 {/* Security Tab */}
                 <TabsContent value="security">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Card className="dark:bg-slate-800 dark:border-slate-700">
+                  <div className="grid gap-4 md:grid-cols-2 items-stretch">
+                    <Card className="dark:bg-slate-800 dark:border-slate-700 flex flex-col">
                       <CardHeader>
                         <CardTitle className="dark:text-white">
-                          Password
+                          Cambiar contraseña
                         </CardTitle>
                         <CardDescription className="dark:text-slate-400">
-                          Change your password and manage your account security
+                          Cambia tu contraseña y administra la seguridad de tu cuenta
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -957,14 +1063,8 @@ export default function ProfilePage() {
                               htmlFor="currentPassword"
                               className="dark:text-white"
                             >
-                              Current Password
+                              Contraseña actual
                             </Label>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                              Last changed:{" "}
-                              {new Date(
-                                userData.securityInfo.lastPasswordChange
-                              ).toLocaleDateString()}
-                            </span>
                           </div>
                           <div className="relative">
                             <Input
@@ -1000,7 +1100,7 @@ export default function ProfilePage() {
                             htmlFor="newPassword"
                             className="dark:text-white"
                           >
-                            New Password
+                            Nueva contraseña
                           </Label>
                           <div className="relative">
                             <Input
@@ -1034,7 +1134,7 @@ export default function ProfilePage() {
                             <div className="mt-2 space-y-1">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs dark:text-slate-400">
-                                  Password Strength
+                                  Fortaleza de la contraseña
                                 </span>
                                 <span
                                   className={`text-xs font-medium ${
@@ -1058,7 +1158,7 @@ export default function ProfilePage() {
                                         : "text-slate-300 dark:text-slate-600"
                                     }`}
                                   />
-                                  <span>At least 8 characters</span>
+                                  <span>Al menos 8 caracteres</span>
                                 </li>
                                 <li className="flex items-center gap-1">
                                   <Check
@@ -1068,7 +1168,7 @@ export default function ProfilePage() {
                                         : "text-slate-300 dark:text-slate-600"
                                     }`}
                                   />
-                                  <span>At least one uppercase letter</span>
+                                  <span>Al menos una letra mayúscula</span>
                                 </li>
                                 <li className="flex items-center gap-1">
                                   <Check
@@ -1078,7 +1178,7 @@ export default function ProfilePage() {
                                         : "text-slate-300 dark:text-slate-600"
                                     }`}
                                   />
-                                  <span>At least one number</span>
+                                  <span>Al menos un número</span>
                                 </li>
                                 <li className="flex items-center gap-1">
                                   <Check
@@ -1088,7 +1188,7 @@ export default function ProfilePage() {
                                         : "text-slate-300 dark:text-slate-600"
                                     }`}
                                   />
-                                  <span>At least one special character</span>
+                                  <span>Al menos un carácter especial</span>
                                 </li>
                               </ul>
                             </div>
@@ -1099,7 +1199,7 @@ export default function ProfilePage() {
                             htmlFor="confirmPassword"
                             className="dark:text-white"
                           >
-                            Confirm New Password
+                            Confirmar nueva contraseña
                           </Label>
                           <Input
                             id="confirmPassword"
@@ -1114,7 +1214,7 @@ export default function ProfilePage() {
                             formData.newPassword !==
                               formData.confirmPassword && (
                               <p className="mt-1 text-xs text-red-500">
-                                Passwords do not match
+                                Las contraseñas no coinciden
                               </p>
                             )}
                         </div>
@@ -1132,7 +1232,7 @@ export default function ProfilePage() {
                           }}
                           className="dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600"
                         >
-                          Cancel
+                          Cancelar
                         </Button>
                         <Button
                           onClick={handlePasswordChange}
@@ -1144,119 +1244,51 @@ export default function ProfilePage() {
                             passwordStrength < 50
                           }
                         >
-                          Update Password
+                          Actualizar contraseña
                         </Button>
                       </CardFooter>
                     </Card>
 
-                    <div className="space-y-4">
-                      <Card className="dark:bg-slate-800 dark:border-slate-700">
+                    <Card className="dark:bg-slate-800 dark:border-slate-700 flex flex-col">
                         <CardHeader>
                           <CardTitle className="dark:text-white">
-                            Two-Factor Authentication
+                            Actividad de inicio de sesión reciente
                           </CardTitle>
                           <CardDescription className="dark:text-slate-400">
-                            Add an extra layer of security to your account
+                            Monitoriza donde se está accediendo a tu cuenta
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <div className="font-medium dark:text-white">
-                                Two-Factor Authentication
-                              </div>
-                              <div className="text-sm text-slate-500 dark:text-slate-400">
-                                Require a verification code when signing in
-                              </div>
-                            </div>
-                            <Switch checked={userData.twoFactorEnabled} />
-                          </div>
-                          <Separator className="dark:bg-slate-600" />
-                          <div className="space-y-2">
-                            <h4 className="font-medium dark:text-white">
-                              Verification Methods
-                            </h4>
-                            <div className="rounded-lg border p-3 dark:border-slate-600 dark:bg-slate-700">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-2">
-                                    <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                  </div>
-                                  <div>
-                                    <div className="font-medium dark:text-white">
-                                      Authenticator App
-                                    </div>
-                                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                                      Use an authenticator app to get
-                                      verification codes
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="dark:bg-slate-600 dark:border-slate-500 dark:text-white dark:hover:bg-slate-500"
-                                >
-                                  Setup
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="rounded-lg border p-3 dark:border-slate-600 dark:bg-slate-700">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="rounded-full bg-slate-100 dark:bg-slate-600 p-2">
-                                    <Mail className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                                  </div>
-                                  <div>
-                                    <div className="font-medium dark:text-white">
-                                      Email
-                                    </div>
-                                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                                      Receive verification codes via email
-                                    </div>
-                                  </div>
-                                </div>
-                                <Badge
-                                  variant="outline"
-                                  className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300 dark:border-green-700"
-                                >
-                                  Active
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="dark:bg-slate-800 dark:border-slate-700">
-                        <CardHeader>
-                          <CardTitle className="dark:text-white">
-                            Recent Login Activity
-                          </CardTitle>
-                          <CardDescription className="dark:text-slate-400">
-                            Monitor where your account is being accessed
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                        <CardContent className="flex-1">
                           <div className="space-y-4">
-                            {userData.securityInfo.loginHistory.map(
-                              (login, index) => (
+                            {loadingActivities ? (
+                              <div className="flex items-center justify-center py-4">
+                                <div className="text-sm text-slate-500 dark:text-slate-400">
+                                  Cargando actividades...
+                                </div>
+                              </div>
+                            ) : loginActivities.length > 0 ? (
+                              loginActivities.map((activity, index) => (
                                 <div
-                                  key={index}
+                                  key={activity.id || index}
                                   className="flex items-start gap-3"
                                 >
                                   <div className="rounded-full bg-slate-100 dark:bg-slate-700 p-2">
                                     <Lock className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                                   </div>
-                                  <div className="flex-1">
+                                  <div className="flex-1 min-w-0">
                                     <div className="font-medium dark:text-white">
-                                      {login.device}
+                                      {activity.device_type || "Unknown Device"}
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                      <span>{login.location}</span>
+                                    {activity.user_agent && activity.user_agent !== activity.device_type && (
+                                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                                        {activity.user_agent}
+                                      </div>
+                                    )}
+                                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                      <span>{activity.location}</span>
                                       <span>•</span>
                                       <span>
-                                        {new Date(login.date).toLocaleString(
+                                        {new Date(activity.login_time).toLocaleString(
                                           "en-US",
                                           {
                                             month: "short",
@@ -1266,21 +1298,32 @@ export default function ProfilePage() {
                                           }
                                         )}
                                       </span>
-                                      {index === 0 && (
+                                      {activity.ip_address && (
                                         <>
                                           <span>•</span>
-                                          <Badge
-                                            variant="outline"
-                                            className="bg-blue-50 text-blue-700 text-xs dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
-                                          >
-                                            Current Session
-                                          </Badge>
+                                          <span className="text-xs text-slate-400">
+                                            {activity.ip_address}
+                                          </span>
                                         </>
+                                      )}
+                                      {activity.is_current_session && (
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-blue-50 text-blue-700 text-xs dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 ml-2"
+                                        >
+                                          Sesión actual
+                                        </Badge>
                                       )}
                                     </div>
                                   </div>
                                 </div>
-                              )
+                              ))
+                            ) : (
+                              <div className="flex items-center justify-center py-4">
+                                <div className="text-sm text-slate-500 dark:text-slate-400">
+                                  No se encontraron actividades de inicio de sesión
+                                </div>
+                              </div>
                             )}
                           </div>
                         </CardContent>
@@ -1289,11 +1332,10 @@ export default function ProfilePage() {
                             variant="outline"
                             className="w-full dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600"
                           >
-                            View All Activity
+                            Ver todas las actividades
                           </Button>
                         </CardFooter>
                       </Card>
-                    </div>
                   </div>
                 </TabsContent>
 
@@ -1303,10 +1345,10 @@ export default function ProfilePage() {
                     <Card className="dark:bg-slate-800 dark:border-slate-700">
                       <CardHeader>
                         <CardTitle className="dark:text-white">
-                          Display Preferences
+                          Preferencias de visualización
                         </CardTitle>
                         <CardDescription className="dark:text-slate-400">
-                          Customize how the dashboard appears to you
+                          Personaliza cómo aparece el dashboard para ti
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
@@ -1389,10 +1431,10 @@ export default function ProfilePage() {
                     <Card className="dark:bg-slate-800 dark:border-slate-700">
                       <CardHeader>
                         <CardTitle className="dark:text-white">
-                          Account Management
+                          Gestión de cuenta
                         </CardTitle>
                         <CardDescription className="dark:text-slate-400">
-                          Manage your account settings and data
+                          Administra tus ajustes de cuenta y datos
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
@@ -1400,7 +1442,7 @@ export default function ProfilePage() {
 
                         <div className="space-y-4">
                           <h3 className="font-medium dark:text-white">
-                            Danger Zone
+                            Zona de peligro
                           </h3>
                           <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
                             <div className="flex items-center gap-3">
@@ -1409,19 +1451,20 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex-1">
                                 <div className="font-medium dark:text-white">
-                                  Delete Account
+                                  Eliminar cuenta
                                 </div>
                                 <div className="text-sm text-slate-700 dark:text-slate-300">
-                                  Permanently delete your account and all
-                                  associated data
+                                  Elimina permanentemente tu cuenta y todos los
+                                  datos asociados
                                 </div>
                               </div>
                               <Button
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => setShowDeleteDialog(true)}
+                                disabled={isDeleting}
                               >
-                                Delete
+                                {isDeleting ? "Eliminando..." : "Eliminar"}
                               </Button>
                             </div>
                           </div>
@@ -1432,27 +1475,31 @@ export default function ProfilePage() {
                                 className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300 dark:bg-slate-700 dark:border-slate-600"
                               >
                                 <AlertTriangle className="mr-2 h-4 w-4" />
-                                Deactivate Account
+                                Desactivar cuenta
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="dark:bg-slate-800 dark:border-slate-700">
                               <AlertDialogHeader>
                                 <AlertDialogTitle className="dark:text-white">
-                                  Deactivate Your Account?
+                                  Desactivar tu cuenta?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription className="dark:text-slate-400">
-                                  Your account will be temporarily deactivated.
-                                  You can reactivate it at any time by signing
-                                  in again. During deactivation, your profile
-                                  will not be visible to others.
+                                  Tu cuenta será desactivada temporalmente.
+                                  Puedes reactivarla en cualquier momento
+                                  ingresando nuevamente. Durante la desactivación,
+                                  tu perfil no será visible para otros.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel className="dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600">
-                                  Cancel
+                                  Cancelar
                                 </AlertDialogCancel>
-                                <AlertDialogAction className="bg-red-600 hover:bg-red-700">
-                                  Deactivate
+                                <AlertDialogAction 
+                                  className="bg-red-600 hover:bg-red-700"
+                                  onClick={handleDeactivateAccount}
+                                  disabled={isDeactivating}
+                                >
+                                  {isDeactivating ? "Desactivando..." : "Desactivar"}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -1472,7 +1519,9 @@ export default function ProfilePage() {
       <DeleteAccountDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
+        onDelete={handleDeleteAccount}
       />
     </div>
   );
 }
+

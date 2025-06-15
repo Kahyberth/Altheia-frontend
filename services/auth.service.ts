@@ -88,6 +88,27 @@ export async function ownerUpdateService(userId: string, data: IUpdateOwnerReque
     return await apiClient.patch(`/owner/update/${userId}`, data)
 }
 
+export async function loginActivityService(userId: string) {
+    return await apiClient.get(`/auth/user/${userId}/login-activities`)
+}
+
+export async function deleteAccountService(userId: string) {
+    return await apiClient.delete(`/auth/user/${userId}`)
+}
+
+
+export async function deactivateAccountService(userId: string) {
+    return await apiClient.patch(`/auth/user/${userId}/deactivate`)
+}
+
+export async function reactivateAccountService(userId: string) {
+    return await apiClient.patch(`/auth/user/${userId}/reactivate`)
+}
+
+export async function verifyDeleteAccountService(userId: string) {
+    return await apiClient.get(`/auth/user/${userId}/exists`)
+}
+
 
 
 
