@@ -249,7 +249,7 @@ export default function PatientDashboardPage() {
               className="space-y-6"
             >
               {/* Header Section */}
-              <motion.div variants={item} className="mb-8">
+              <motion.div variants={item} className="mb-6">
                 <div className="text-center sm:text-left">
                   <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-2">
                     Bienvenido, {user?.name}
@@ -261,7 +261,7 @@ export default function PatientDashboardPage() {
               </motion.div>
 
               {/* Quick Actions Section */}
-              <motion.div variants={item}>
+              <motion.div variants={item} className="mb-8">
                 <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
                   <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -272,18 +272,18 @@ export default function PatientDashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {actions.map((action, i) => (
                         <Button 
                           key={i} 
                           variant="outline" 
-                          className="h-24 flex flex-col items-center justify-center gap-2 p-4 hover:shadow-md transition-all duration-200"
+                          className="h-28 flex flex-col items-center justify-center gap-3 p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group"
                           onClick={() => router.push(`/dashboard/${action.href}`)}
                         >
-                          <div className={`p-2 rounded-lg ${action.color}`}>
+                          <div className={`p-3 rounded-xl ${action.color} group-hover:scale-110 transition-transform duration-200`}>
                             <action.icon className="h-6 w-6" />
                           </div>
-                          <span className="text-sm font-medium text-center">{action.title}</span>
+                          <span className="text-sm font-medium text-center leading-tight">{action.title}</span>
                         </Button>
                       ))}
                     </div>
@@ -291,64 +291,56 @@ export default function PatientDashboardPage() {
                 </Card>
               </motion.div>
 
+              {/* Top Priority Section - Next Appointment */}
+              <motion.div variants={item} className="mb-6">
+                <NextAppointmentCard appointment={patientData.nextAppointment} />
+              </motion.div>
+
               {/* Main Content Grid */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 
-                {/* Left Column - Primary Content */}
-                <div className="xl:col-span-2 space-y-6">
-                  
-                  {/* Next Appointment */}
-                  <motion.div variants={item}>
-                    <NextAppointmentCard appointment={patientData.nextAppointment} />
-                  </motion.div>
+                {/* Lab Results - Takes more space on larger screens */}
+                <motion.div variants={item} className="lg:col-span-1 xl:col-span-2">
+                  <LabResults results={mockResults} />
+                </motion.div>
 
-                  {/* Lab Results */}
-                  <motion.div variants={item}>
-                    <LabResults results={mockResults} />
-                  </motion.div>
-
-                </div>
-
-                {/* Right Column - Secondary Content */}
-                <div className="xl:col-span-1 space-y-6">
-                  
-                  {/* Recent Activity */}
-                  <motion.div variants={item}>
-                    <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white">
-                          Actividad Reciente
-                        </CardTitle>
-                        <CardDescription>
-                          Últimas actualizaciones de tu historial
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <RecentActivity />
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-
-                  {/* Analytics Overview */}
-                  <motion.div variants={item}>
-                    <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white">
-                          Análisis del Sistema
-                        </CardTitle>
-                        <CardDescription>
-                          Estadísticas y métricas importantes
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <AnalyticsOverview />
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-
-                </div>
+                {/* Recent Activity - Sidebar on larger screens */}
+                <motion.div variants={item} className="lg:col-span-1 xl:col-span-1">
+                  <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0 h-full">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Activity className="h-5 w-5 text-blue-600" />
+                        Actividad Reciente
+                      </CardTitle>
+                      <CardDescription>
+                        Últimas actualizaciones de tu historial
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <RecentActivity />
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
               </div>
+
+              {/* Bottom Section - Analytics Overview */}
+              <motion.div variants={item} className="mt-8">
+                <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                      <FlaskConical className="h-5 w-5 text-green-600" />
+                      Análisis del Sistema
+                    </CardTitle>
+                    <CardDescription>
+                      Estadísticas y métricas importantes del sistema
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AnalyticsOverview />
+                  </CardContent>
+                </Card>
+              </motion.div>
 
             </motion.div>
           </div>
