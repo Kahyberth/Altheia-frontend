@@ -260,46 +260,10 @@ export default function PhysicianDashboardPage() {
                         <CardTitle className="dark:text-white">Análisis de pacientes</CardTitle>
                         <CardDescription className="dark:text-slate-400">Monitorear métricas de pacientes y tendencias de salud</CardDescription>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-8 gap-1 dark:border-slate-600 dark:text-white dark:hover:bg-slate-700">
-                            <Filter className="h-3.5 w-3.5" />
-                            <span>Filtrar</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="dark:bg-slate-800 dark:border-slate-700">
-                          <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Últimos 7 días</DropdownMenuItem>
-                          <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Últimos 30 días</DropdownMenuItem>
-                          <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Últimos 3 meses</DropdownMenuItem>
-                          <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Últimos 12 meses</DropdownMenuItem>
-                          <DropdownMenuSeparator className="dark:border-slate-600" />
-                          <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-700">Rango personalizado</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </CardHeader>
-                  
                   <CardContent>
-                    <Tabs defaultValue="demographics">
-                      <TabsList className="mb-4 dark:bg-slate-700">
-                        <TabsTrigger value="demographics" className="dark:text-slate-400 dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">Demografía</TabsTrigger>
-                        <TabsTrigger value="conditions" className="dark:text-slate-400 dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">Condiciones</TabsTrigger>
-                        <TabsTrigger value="satisfaction" className="dark:text-slate-400 dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">Satisfacción</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="demographics" className="space-y-4">
-                        <PatientChart />
-                      </TabsContent>
-                      <TabsContent value="conditions">
-                        <div className="h-[300px] flex items-center justify-center">
-                          <p className="text-slate-500 dark:text-slate-400">Visualización de datos de condición próximamente</p>
-                        </div>
-                      </TabsContent>
-                      <TabsContent value="satisfaction">
-                        <div className="h-[300px] flex items-center justify-center">
-                          <p className="text-slate-500 dark:text-slate-400">Visualización de datos de satisfacción próximamente</p>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+                    <PatientChart clinicId={user?.clinic_id} />
                   </CardContent>
                 </Card>
               </motion.div>
@@ -317,7 +281,7 @@ export default function PhysicianDashboardPage() {
                           {new Date().toLocaleDateString("es-ES", { weekday: "long", month: "long", day: "numeric" })}
                         </CardDescription>
                       </div>
-                      <Button variant="outline" size="sm" className="h-8 gap-1 dark:border-slate-600 dark:text-white dark:hover:bg-slate-700">
+                      <Button variant="outline" size="sm" className="h-8 gap-1 dark:border-slate-600 dark:text-white dark:hover:bg-slate-700" onClick={() => router.push("/dashboard/appointments")}>
                         <Plus className="h-3.5 w-3.5" />
                         <span>Agregar</span>
                       </Button>
@@ -327,7 +291,7 @@ export default function PhysicianDashboardPage() {
                     <AppointmentList appointments={appointments.filter(appointment => appointment.date_time.split("T")[0] === new Date().toISOString().split("T")[0])} />
                   </CardContent>
                   <CardFooter className="border-t bg-slate-50 dark:bg-slate-700 dark:border-slate-600 px-6 py-3">
-                    <Button variant="ghost" className="w-full justify-center gap-1 text-blue-600 dark:text-blue-400 dark:hover:bg-slate-600">
+                    <Button variant="ghost" className="w-full justify-center gap-1 text-blue-600 dark:text-blue-400 dark:hover:bg-slate-600" onClick={() => router.push("/dashboard/appointments")}>
                       <Calendar className="h-4 w-4" />
                       <span>Ver calendario completo</span>
                     </Button>

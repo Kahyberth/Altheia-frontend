@@ -21,12 +21,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useMobile } from "@/hooks/use-mobile";
 import { AuthModal } from "@/components/auth-modal";
 import apiClient from "@/fetch/apiClient";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
   const isMobile = useMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-
+  const router = useRouter();
 
   const container = {
     hidden: { opacity: 0 },
@@ -127,12 +128,7 @@ export default function LandingPage() {
               transition={{ delay: 0.4 }}
               className="hidden md:block"
             >
-                              <div className="flex gap-2">
-                <Button variant="outline" asChild>
-                  <Link href="/create-clinic">
-                    Registrar Clínica
-                  </Link>
-                </Button>
+                              <div className="flex gap-1">
                 <Button onClick={() => setAuthModalOpen(true)}>
                   Iniciar Sesión
                   <ChevronRight className="ml-1 h-4 w-4" />
@@ -237,7 +233,7 @@ export default function LandingPage() {
                   <Button
                     size="lg"
                     className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-                    onClick={() => setAuthModalOpen(true)}
+                    onClick={() => router.push("/create-clinic")}
                   >
                     Únete a Altheia
                     <ArrowRight className="ml-2 h-4 w-4" />

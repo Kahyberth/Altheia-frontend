@@ -36,6 +36,7 @@ export function useRole() {
     isLabTechnician: (): boolean => userRole === UserRole.LAB_TECHNICIAN,
     isPatient: (): boolean => userRole === UserRole.PATIENT,
     isReceptionist: (): boolean => userRole === UserRole.RECEPTIONIST,
+    isSuperAdmin: (): boolean => userRole === UserRole.SUPER_ADMIN,
     
     isAdmin: (): boolean => userRole === UserRole.OWNER,
     isDoctor: (): boolean => userRole === UserRole.PHYSICIAN,
@@ -48,5 +49,11 @@ export function useRole() {
     
     isStaff: (): boolean => 
       userRole !== UserRole.PATIENT,
+
+    isSuperUser: (): boolean => 
+      userRole === UserRole.SUPER_ADMIN,
+
+    hasSystemAccess: (): boolean => 
+      userRole === UserRole.SUPER_ADMIN,
   };
 } 

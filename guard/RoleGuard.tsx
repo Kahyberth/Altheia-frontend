@@ -100,5 +100,13 @@ export function StaffOnly({ children, fallback = null }: { children: ReactNode; 
   );
 }
 
+export function SuperAdminOnly({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) {
+  return (
+    <RoleGuard allowedRoles={[UserRole.SUPER_ADMIN]} fallback={fallback}>
+      {children}
+    </RoleGuard>
+  );
+}
+
 export const AdminOnly = OwnerOnly;
 export const DoctorOnly = PhysicianOnly; 

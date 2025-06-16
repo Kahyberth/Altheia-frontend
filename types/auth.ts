@@ -45,7 +45,8 @@ export enum UserRole {
   OWNER = 'owner',
   PATIENT = 'patient',
   PHYSICIAN = 'physician',
-  RECEPTIONIST = 'receptionist'
+  RECEPTIONIST = 'receptionist',
+  SUPER_ADMIN = 'super-admin',
 }
 
 export interface Permission {
@@ -101,6 +102,74 @@ export interface IUpdateOwnerRequest {
   name?: string;
   phone?: string;
   password?: string;
+}
+
+// Super Admin interfaces
+export interface DeactivatedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  phone: string;
+  document_number: string;
+  gender: string;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login: string;
+  role_details: {
+    patient_id?: string;
+    physician_id?: string;
+    date_of_birth?: string;
+    address?: string;
+    eps?: string;
+    blood_type?: string;
+    clinic_id?: string;
+    license_number?: string;
+    physician_specialty?: string;
+  };
+}
+
+export interface ClinicOwner {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  document_number: string;
+  gender: string;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login: string;
+  clinic_owner_id: string;
+  clinic_id: string;
+  owner_status: boolean;
+  owner_created_at: string;
+}
+
+export interface PaginatedResponse<T> {
+  message: string;
+  data: {
+    limit: number;
+    page: number;
+    sort?: string;
+    total: number;
+    result: T[];
+  };
+}
+
+export interface SuperAdminData {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  phone: string;
+  document_number: string;
+  status: boolean;
+  gender: string;
+  clinic_id?: string;
+  last_login: string;
+  role_details?: any;
 }
 
 

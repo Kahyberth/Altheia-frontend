@@ -2,6 +2,43 @@ import { UserRole, RoleConfig, NavigationItem } from '@/types/auth';
 
 
 const roleConfigurations: Record<UserRole, RoleConfig> = {
+  [UserRole.SUPER_ADMIN]: {
+    role: UserRole.SUPER_ADMIN,
+    name: 'Super Administrador',
+    permissions: [
+      { resource: 'users', actions: ['create', 'read', 'update', 'delete', 'activate', 'deactivate'] },
+      { resource: 'patients', actions: ['create', 'read', 'update', 'delete', 'activate', 'deactivate'] },
+      { resource: 'appointments', actions: ['create', 'read', 'update', 'delete'] },
+      { resource: 'analytics', actions: ['read'] },
+      { resource: 'clinic', actions: ['create', 'read', 'update', 'delete'] },
+      { resource: 'staff', actions: ['create', 'read', 'update', 'delete', 'activate', 'deactivate'] },
+      { resource: 'system', actions: ['read', 'update', 'delete', 'manage'] },
+      { resource: 'super-admin', actions: ['create', 'read', 'update', 'delete'] },
+      { resource: 'clinic-owners', actions: ['read', 'update', 'activate', 'deactivate'] },
+      { resource: 'deactivated-users', actions: ['read', 'activate', 'delete'] },
+      { resource: 'records', actions: ['create', 'read', 'update', 'delete'] },
+      { resource: 'prescriptions', actions: ['create', 'read', 'update', 'delete'] },
+      { resource: 'lab_orders', actions: ['create', 'read', 'update', 'delete'] },
+      { resource: 'lab_results', actions: ['create', 'read', 'update', 'delete'] },
+      { resource: 'equipment', actions: ['create', 'read', 'update', 'delete'] },
+      { resource: 'medical_records', actions: ['create', 'read', 'update', 'delete'] }
+    ],
+    navigationItems: [
+      { id: 'super-dashboard', label: 'Super Dashboard', icon: 'Crown', href: '/dashboard/super' },
+      { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', href: '/dashboard' },
+      { id: 'users', label: 'Gestión de Personal', icon: 'Users', href: '/dashboard/staff-management' },
+      { id: 'patients', label: 'Pacientes', icon: 'User', href: '/dashboard/patients' },
+      { id: 'appointments', label: 'Citas', icon: 'Calendar', href: '/dashboard/appointments' },
+      { id: 'analytics', label: 'Analíticas', icon: 'BarChart3', href: '/dashboard/analytics' },
+      { id: 'clinic', label: 'Gestión Clínica', icon: 'Shield', href: '/dashboard/clinic-management' },
+      { id: 'lab-orders', label: 'Órdenes de Laboratorio', icon: 'ClipboardCheck', href: '/dashboard/lab-orders' },
+      { id: 'lab-results', label: 'Resultados', icon: 'Activity', href: '/dashboard/lab-results' },
+      { id: 'equipment', label: 'Equipos', icon: 'Settings', href: '/dashboard/equipment' },
+      { id: 'medical-records', label: 'Historial Médico', icon: 'FileText', href: '/dashboard/medical-records' },
+      { id: 'profile', label: 'Mi Perfil', icon: 'User', href: '/dashboard/profile' }
+    ]
+  },
+
   [UserRole.OWNER]: {
     role: UserRole.OWNER,
     name: 'Creador de la Clínica',

@@ -1,10 +1,20 @@
+"use client";
 import OwnerDashboardPage from "@/components/Dashboard/Owner/page";
 import PatientDashboardPage from "@/components/Dashboard/Patient/page";
 import PhysicianDashboardPage from "@/components/Dashboard/Physician/page";
 import ReceptionistDashboardPage from "@/components/Dashboard/Receptionist/page";
-import { OwnerOnly, PatientOnly, PhysicianOnly, ReceptionistOnly } from "@/guard/RoleGuard";
+import SuperDashboard from "@/components/Dashboard/Super/page";
+import { useAuth } from "@/context/AuthContext";
+import { OwnerOnly, PatientOnly, PhysicianOnly, ReceptionistOnly, SuperAdminOnly } from "@/guard/RoleGuard";
+
 
 export default function DashboardPage() {
+
+  const { user } = useAuth();
+
+
+  console.log(user?.role);
+
   return (
     <div>
       <PatientOnly>
@@ -19,6 +29,10 @@ export default function DashboardPage() {
       <PhysicianOnly>
         <PhysicianDashboardPage />
       </PhysicianOnly>
+
+      <SuperAdminOnly>
+        <SuperDashboard />
+      </SuperAdminOnly>
     </div>
   )
 }
