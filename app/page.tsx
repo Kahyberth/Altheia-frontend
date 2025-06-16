@@ -127,10 +127,17 @@ export default function LandingPage() {
               transition={{ delay: 0.4 }}
               className="hidden md:block"
             >
-              <Button onClick={() => setAuthModalOpen(true)}>
-                Iniciar Sesión
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
+                              <div className="flex gap-2">
+                <Button variant="outline" asChild>
+                  <Link href="/create-clinic">
+                    Registrar Clínica
+                  </Link>
+                </Button>
+                <Button onClick={() => setAuthModalOpen(true)}>
+                  Iniciar Sesión
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
             </motion.div>
 
             {/* Mobile menu button */}
@@ -173,6 +180,15 @@ export default function LandingPage() {
                 Contacto
               </Link>
               <div className="pt-4 flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-center"
+                  asChild
+                >
+                  <Link href="/create-clinic">
+                    Registrar Clínica
+                  </Link>
+                </Button>
                 <Button
                   className="w-full justify-center"
                   onClick={() => setAuthModalOpen(true)}

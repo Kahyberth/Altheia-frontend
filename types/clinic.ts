@@ -133,6 +133,7 @@ export interface ClinicOwner {
     status:               boolean;
     createdAt:            Date;
     updatedAt:            Date;
+    user?:                null;
     physician_specialty?: string;
     license_number?:      string;
 }
@@ -289,4 +290,26 @@ export interface ClinicOwner {
     user?:                null;
     physician_specialty?: string;
     license_number?:      string;
+}
+
+export interface ClinicRegistrationData {
+  owner_name: string;
+  owner_email: string;
+  owner_phone: string;
+  owner_position: string;
+  owner_document_number: string;
+  owner_gender: string;
+  name: string;
+  email: string;
+  description: string;
+  phone: string;
+  website: string;
+  address: string;
+  country: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  member_count: number;
+  services_offered: string[];
+  accepted_eps: string[];
 }
