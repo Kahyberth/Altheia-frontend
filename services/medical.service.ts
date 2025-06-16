@@ -1,8 +1,9 @@
 import apiClient from "@/fetch/apiClient"
 import { MedicalConsultation, MedicalHistoryInPatient } from "@/types/medical"
+import { MedicalHistoryResponse } from "./medical-history.service"
 
 export const getMedicalHistoryByPatientId = async (patientId: string) => {
-  return await apiClient.get<MedicalHistoryInPatient>(`/medical-history/patient/${patientId}`)
+  return await apiClient.get<MedicalHistoryResponse>(`/medical-history/patient/${patientId}`)
 }
 
 export const addMedicalHistory = async (medicalHistory: MedicalConsultation ) => {

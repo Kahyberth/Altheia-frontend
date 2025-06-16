@@ -72,9 +72,18 @@ export const appointmentService = {
       console.log('Fetching appointments for physician ID:', physicianId);
       const response = await apiClient.get(`/appointments/getAllByMedicId/${physicianId}`);
       const data = response.data;
+      
+      // Handle case where physician has no appointments (API returns null)
+      if (data === null || data === undefined) {
+        console.log('No appointments found for physician:', physicianId);
+        return [];
+      }
+      
       if (!Array.isArray(data)) {
         console.error('Expected array of appointments but got:', data);
+        return [];
       }
+      
       console.log('Fetched appointments:', data.length, 'appointments found');
       return data;
     } catch (error) {
@@ -92,10 +101,18 @@ export const appointmentService = {
       console.log('Fetching appointments for user ID:', userId);
       const response = await apiClient.get(`/appointments/getAllByUserId/${userId}`);
       const data = response.data;
+      
+      // Handle case where user has no appointments (API returns null)
+      if (data === null || data === undefined) {
+        console.log('No appointments found for user:', userId);
+        return [];
+      }
+      
       if (!Array.isArray(data)) {
         console.error('Expected array of appointments but got:', data);
         return [];
       }
+      
       console.log('Fetched appointments for user:', data.length, 'appointments found');
       return data;
     } catch (error) {

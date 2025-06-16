@@ -71,7 +71,6 @@ export function NewAppointmentDialog({
         const personnel = (response.data as any)?.personnel || response.data
         console.log('Personnel data:', personnel)
         
-        // Check if personnel is an array
         if (!Array.isArray(personnel)) {
           console.error('Personnel is not an array:', personnel)
           setProviders([])
@@ -79,7 +78,6 @@ export function NewAppointmentDialog({
           return
         }
         
-        // Filtrar physicians (providers)
         const physicianData = personnel
           .filter(person => person.role === "physician")
           .map(person => ({
@@ -95,8 +93,7 @@ export function NewAppointmentDialog({
             physician_status: person.status,
             clinic_id: person.role_details?.clinic_id || user?.clinic_id
           }))
-        
-        // Filtrar patients
+
         const patientData = personnel
           .filter(person => person.role === "patient")
           .map(person => ({
@@ -120,7 +117,7 @@ export function NewAppointmentDialog({
         setProviders(physicianData)
         setPatients(patientData)
         
-        // Auto-select current user if they are a patient
+   
         if (isPatient()) {
           const currentPatient = patientData.find(p => p.user_id === user?.id)
           console.log('Found current patient:', currentPatient)
@@ -130,7 +127,6 @@ export function NewAppointmentDialog({
             currentUserId: user?.id
           })
           if (currentPatient) {
-            // Use the patient's ID (patient_id) for the appointment creation
             setSelectedPatient(currentPatient.id)
           }
         }
@@ -148,7 +144,7 @@ export function NewAppointmentDialog({
     }
   }, [open, user?.clinic_id])
 
-  // Función para cargar horarios ocupados
+
   const loadOccupiedTimes = async (physicianId: string, selectedDate: Date) => {
     if (!physicianId || !selectedDate) {
       setOccupiedTimes([])
@@ -169,7 +165,7 @@ export function NewAppointmentDialog({
     }
   }
 
-  // Efecto para cargar horarios ocupados cuando cambia la fecha o proveedor
+
   useEffect(() => {
     if (selectedProvider && date) {
       loadOccupiedTimes(selectedProvider, date)
@@ -179,16 +175,14 @@ export function NewAppointmentDialog({
   }, [selectedProvider, date])
 
   const handleSubmit = async () => {
-    // Validate form
     const newErrors: Record<string, string> = {}
-    if (!selectedPatient) newErrors.patient = "Patient is required"
-    if (!selectedProvider) newErrors.provider = "Provider is required"
+    if (!selectedPatient) newErrors.patient = "Paciente es requerido"
+    if (!selectedProvider) newErrors.provider = "Proveedor es requerido"
     if (!selectedType) newErrors.type = "Appointment type is required"
     if (!date) newErrors.date = "Date is required"
     if (!startTime) newErrors.startTime = "Start time is required"
     if (!endTime) newErrors.endTime = "End time is required"
 
-    // Validar conflictos de horario
     if (selectedProvider && date && startTime) {
       const dateStr = format(date, "yyyy-MM-dd")
       const selectedAppointmentType = appointmentTypes.find(t => t.id === selectedType)
@@ -213,7 +207,6 @@ export function NewAppointmentDialog({
 
     setIsSubmitting(true)
     try {
-      // Get the selected appointment type to use as reason
       const selectedAppointmentType = appointmentTypes.find(t => t.id === selectedType)
       
       const appointmentData = {
@@ -239,11 +232,9 @@ export function NewAppointmentDialog({
       console.log('Appointment created successfully. Result:', result)
       console.log('Created appointment ID:', result?.id)
       
-      // Reset form and close dialog
       resetForm()
       onOpenChange(false)
       
-      // Notify parent component that an appointment was created
       if (onAppointmentCreated) {
         console.log('Calling onAppointmentCreated callback')
         onAppointmentCreated()
@@ -275,7 +266,7 @@ export function NewAppointmentDialog({
   const handleTypeChange = (value: string) => {
     setSelectedType(value)
 
-    // Update end time based on appointment type duration
+
     const type = appointmentTypes.find((t) => t.id === value)
     if (type && startTime) {
       const [hours, minutes] = startTime.split(":").map(Number)
@@ -290,7 +281,7 @@ export function NewAppointmentDialog({
   const handleStartTimeChange = (value: string) => {
     setStartTime(value)
 
-    // Update end time based on appointment type duration
+
     const type = appointmentTypes.find((t) => t.id === selectedType)
     if (type && value) {
       const [hours, minutes] = value.split(":").map(Number)
@@ -306,16 +297,16 @@ export function NewAppointmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Schedule New Appointment</DialogTitle>
-          <DialogDescription>Fill in the details below to schedule a new appointment for a patient.</DialogDescription>
+          <DialogTitle>Agendar cita</DialogTitle>
+          <DialogDescription>Llena los detalles a continuación para agendar una nueva cita para un paciente.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           {!isPatient() && (
             <div className="grid gap-2">
-              <Label htmlFor="patient">Patient</Label>
+              <Label htmlFor="patient">Paciente</Label>
               <Select value={selectedPatient} onValueChange={setSelectedPatient}>
                 <SelectTrigger id="patient" className={errors.patient ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select patient" />
+                  <SelectValue placeholder="Seleccionar paciente" />
                 </SelectTrigger>
                 <SelectContent>
                   <ScrollArea className="h-[200px]">
@@ -402,7 +393,7 @@ export function NewAppointmentDialog({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date">Fecha</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -419,13 +410,11 @@ export function NewAppointmentDialog({
                     selected={date} 
                     onSelect={(newDate) => {
                       setDate(newDate)
-                      // Reset time selection when date changes
                       setStartTime("09:00")
                       setErrors(prev => ({ ...prev, startTime: '', date: '' }))
                     }}
                     initialFocus
                     disabled={(date) => {
-                      // Disable past dates
                       const today = new Date()
                       today.setHours(0, 0, 0, 0)
                       return date < today
@@ -441,10 +430,10 @@ export function NewAppointmentDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="type">Appointment Type</Label>
+              <Label htmlFor="type">Tipo de cita</Label>
               <Select value={selectedType} onValueChange={handleTypeChange}>
                 <SelectTrigger id="type" className={errors.type ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
                   {appointmentTypes.map((type) => (
@@ -465,7 +454,6 @@ export function NewAppointmentDialog({
             </div>
           </div>
 
-          {/* Time Slot Picker */}
           <div className="grid gap-2">
             <Label>Horario de la Cita</Label>
             {selectedProvider && date ? (
@@ -474,7 +462,6 @@ export function NewAppointmentDialog({
                 onTimeSelect={(time) => {
                   setStartTime(time)
                   handleStartTimeChange(time)
-                  // Clear any previous time errors when selecting a new time
                   if (errors.startTime) {
                     setErrors(prev => ({ ...prev, startTime: '' }))
                   }
@@ -499,10 +486,10 @@ export function NewAppointmentDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Notas</Label>
             <Textarea
               id="notes"
-              placeholder="Add any additional notes or instructions"
+              placeholder="Agrega cualquier nota adicional o instrucciones"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />

@@ -5,8 +5,6 @@ import {
   User,
   FileText,
   MapPin,
-  Video,
-  MessageSquare,
   Phone,
   Mail,
   CheckCircle2,
@@ -14,7 +12,6 @@ import {
   RefreshCw,
   Shield,
   History,
-  ChevronRight,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -57,12 +54,12 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
     <Card className="sticky top-4">
       <CardHeader className="flex flex-row items-start justify-between pb-3">
         <div>
-          <CardTitle>Appointment Details</CardTitle>
+          <CardTitle>Detalles de la cita</CardTitle>
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
             <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">Cerrar</span>
           </Button>
         </div>
       </CardHeader>
@@ -70,10 +67,10 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
         <Tabs defaultValue="details">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details" className="text-xs sm:text-sm">
-              Details
+              Detalles
             </TabsTrigger>
             <TabsTrigger value="patient" className="text-xs sm:text-sm">
-              Patient
+              Paciente
             </TabsTrigger>
           </TabsList>
           <div className="mt-4">
@@ -91,10 +88,10 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
                 </div>
 
                 <div className="rounded-lg border p-4">
-                  <h3 className="mb-2 font-medium">Appointment Information</h3>
+                  <h3 className="mb-2 font-medium">Información de la cita</h3>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <p className="text-sm font-medium text-slate-500">Date & Time</p>
+                      <p className="text-sm font-medium text-slate-500">Fecha y hora</p>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-slate-400" />
                         <p>{format(parseISO(appointment.date), "MMMM d, yyyy")}</p>
@@ -105,14 +102,14 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-500">Type</p>
+                      <p className="text-sm font-medium text-slate-500">Tipo</p>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-slate-400" />
                         <p>{appointment.appointmentType}</p>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-500">Provider</p>
+                      <p className="text-sm font-medium text-slate-500">Proveedor</p>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-slate-400" />
                         <p>{appointment.provider?.name}</p>
@@ -123,7 +120,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-500">Location</p>
+                      <p className="text-sm font-medium text-slate-500">Ubicación</p>
                       <div className="flex items-center gap-2">
                         <p>{appointment.locationDetails?.name}</p>
                       </div>
@@ -137,36 +134,30 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
 
                 {appointment.notes && (
                   <div className="rounded-lg border p-4">
-                    <h3 className="mb-2 font-medium">Notes</h3>
+                    <h3 className="mb-2 font-medium">Notas</h3>
                     <p className="text-sm">{appointment.notes}</p>
                   </div>
                 )}
 
                 <div className="rounded-lg border p-4">
-                  <h3 className="mb-2 font-medium">Actions</h3>
+                  <h3 className="mb-2 font-medium">Acciones</h3>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {canCheckIn && (
-                      <Button variant="outline" className="justify-start">
-                        <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-                        Check In Patient
-                      </Button>
-                    )}
                     {canComplete && (
                       <Button variant="outline" className="justify-start">
                         <CheckCircle2 className="mr-2 h-4 w-4 text-cyan-500" />
-                        Mark as Completed
+                        Marcar como completado
                       </Button>
                     )}
                     {canReschedule && (
                       <Button variant="outline" className="justify-start" onClick={handleReschedule}>
                         <RefreshCw className="mr-2 h-4 w-4 text-blue-500" />
-                        Reschedule
+                        Reagendar cita
                       </Button>
                     )}
                     {canCancel && (
                       <Button variant="outline" className="justify-start" onClick={() => onCancel(appointment.id)}>
                         <X className="mr-2 h-4 w-4 text-red-500" />
-                        Cancel Appointment
+                        Cancelar cita
                       </Button>
                     )}
                   </div>
@@ -194,7 +185,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
                 </div>
 
                 <div className="rounded-lg border p-4">
-                  <h3 className="mb-2 font-medium">Contact Information</h3>
+                  <h3 className="mb-2 font-medium">Información de contacto</h3>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-slate-400" />
@@ -208,68 +199,16 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
                 </div>
 
                 <div className="rounded-lg border p-4">
-                  <h3 className="mb-2 font-medium">Patient Actions</h3>
+                  <h3 className="mb-2 font-medium">Acciones del paciente</h3>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Button variant="outline" className="justify-start">
                       <FileText className="mr-2 h-4 w-4 text-blue-500" />
-                      View Medical Records
+                      Ver historial médico
                     </Button>
                     <Button variant="outline" className="justify-start">
                       <Calendar className="mr-2 h-4 w-4 text-blue-500" />
-                      View All Appointments
+                      Ver todas las citas
                     </Button>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border p-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">Recent Appointments</h3>
-                    <Button variant="ghost" size="sm" className="h-8 gap-1 text-blue-600">
-                      <span>View all</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="mt-2 space-y-2">
-                    {[
-                      {
-                        date: "2025-05-10",
-                        time: "09:00 AM",
-                        type: "Check-up",
-                        provider: "Dr. Rebecca Taylor",
-                        status: "completed",
-                      },
-                      {
-                        date: "2025-04-15",
-                        time: "02:30 PM",
-                        type: "Follow-up",
-                        provider: "Dr. Rebecca Taylor",
-                        status: "completed",
-                      },
-                    ].map((apt, index) => (
-                      <div key={index} className="rounded-lg border p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-slate-400" />
-                            <p className="text-sm font-medium">
-                              {format(parseISO(apt.date), "MMM d, yyyy")} • {apt.time}
-                            </p>
-                          </div>
-                          <Badge
-                            variant="outline"
-                            className={`${
-                              apt.status === "completed" ? "bg-cyan-50 text-cyan-700" : "bg-blue-50 text-blue-700"
-                            }`}
-                          >
-                            {formatStatus(apt.status)}
-                          </Badge>
-                        </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                          <span>{apt.type}</span>
-                          <span>•</span>
-                          <span>{apt.provider}</span>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>
@@ -280,7 +219,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
       <CardFooter className="flex items-center justify-between border-t p-4 mt-4">
         <div className="flex items-center gap-1 text-xs text-slate-500">
           <Shield className="h-3.5 w-3.5" />
-          <span>HIPAA Compliant</span>
+          <span>Altheia EHR</span>
         </div>
         <div className="flex items-center gap-1 text-xs text-slate-500">
           <History className="h-3.5 w-3.5" />
@@ -305,9 +244,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel, onReschedul
   )
 }
 
-// Helper functions
 function formatTime(time: string) {
-  // time is always in 'HH:mm' 24-hour format
   const [hours, minutes] = time.split(":").map(Number);
   const ampm = hours >= 12 ? 'PM' : 'AM';
   const formattedHour = hours % 12 || 12;

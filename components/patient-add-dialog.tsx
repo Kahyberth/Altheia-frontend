@@ -32,8 +32,6 @@ export function PatientAddDialog({ open, onOpenChange }: PatientAddDialogProps) 
   const [step, setStep] = useState(1)
   const totalSteps = 2
   const { user } = useAuth()
-  const [clinic, setClinic] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
   const [eps, setEps] = useState<any[]>([])
   const [formData, setFormData] = useState({
     name: "",
@@ -64,7 +62,6 @@ export function PatientAddDialog({ open, onOpenChange }: PatientAddDialogProps) 
 
   const handleClose = () => {
     onOpenChange(false)
-    // Reset form when dialog is closed
     setTimeout(() => setStep(1), 300)
   }
 
@@ -72,13 +69,6 @@ export function PatientAddDialog({ open, onOpenChange }: PatientAddDialogProps) 
   useEffect(() => {
     const fetchClinicInformation = async () => {
       if (!user) return;
-
-      const clinicRes = await getClinicInformation(user.id);
-      const clinic_id =
-        clinicRes.data?.clinic?.id || clinicRes.data?.information?.clinic_id;
-      setClinic(clinic_id);
-      console.log(clinic_id);
-
       const epsRes = await getAllEps(1, 100);
       console.log(epsRes);
       const list = Array.isArray(epsRes.data)
@@ -276,8 +266,6 @@ export function PatientAddDialog({ open, onOpenChange }: PatientAddDialogProps) 
                 return;
               }
               try{
-                const clinicRes=await getClinicInformation(user.id);
-                const clinic_id=clinicRes.data?.clinic?.id||clinicRes.data?.information?.clinic_id;
                 await createPatientService({
                   name:            formData.name,
                   email:           formData.email,
@@ -289,7 +277,7 @@ export function PatientAddDialog({ open, onOpenChange }: PatientAddDialogProps) 
                   address:         formData.address,
                   eps:             formData.eps,
                   blood_type:      formData.blood_type,
-                  clinic_id:       clinic_id
+                  clinic_id:       user.clinic_id
                 });
                 addToast({title:"Paciente creado",description:"El paciente se registró correctamente"});
                 onOpenChange(false);

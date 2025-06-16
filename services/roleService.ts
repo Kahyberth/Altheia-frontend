@@ -35,12 +35,10 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
     ],
     navigationItems: [
       { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', href: '/dashboard' },
-      { id: 'patients', label: 'Mis Pacientes', icon: 'Users', href: '/dashboard/patients' },
+      { id: 'patients', label: 'Pacientes', icon: 'Users', href: '/dashboard/patients' },
       { id: 'appointments', label: 'Mis Citas', icon: 'Calendar', href: '/dashboard/appointments' },
-      { id: 'records', label: 'Historiales Médicos', icon: 'FileText', href: '/dashboard/records' },
-      { id: 'prescriptions', label: 'Recetas', icon: 'Pill', href: '/dashboard/prescriptions' },
-      { id: 'lab-orders', label: 'Órdenes de Lab', icon: 'ClipboardCheck', href: '/dashboard/lab-orders' },
-      { id: 'schedule', label: 'Mi Horario', icon: 'Clock', href: '/dashboard/schedule' }
+      { id: 'profile', label: 'Mi Perfil', icon: 'User', href: '/dashboard/profile' },
+      { id: 'medical-records', label: 'Historial Médico', icon: 'FileText', href: '/dashboard/medical-records' }
     ]
   },
   
@@ -73,7 +71,6 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
       { id: 'dashboard', label: 'Mi Panel', icon: 'LayoutDashboard', href: '/dashboard' },
       { id: 'appointments', label: 'Mis Citas', icon: 'Calendar', href: '/dashboard/appointments' },
       { id: 'records', label: 'Historial Clínico', icon: 'FileText', href: '/dashboard/patient-history' },
-      { id: 'lab-orders', label: 'Órdenes de Laboratorio', icon: 'FlaskConical', href: '/dashboard/lab-orders' },
       { id: 'profile', label: 'Mi Perfil', icon: 'User', href: '/dashboard/profile' }
     ]
   },
@@ -84,16 +81,16 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
     permissions: [
       { resource: 'appointments', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'patients', actions: ['create', 'read', 'update'] },
-      { resource: 'records', actions: ['read', 'update'] },
-      { resource: 'lab_results', actions: ['read', 'update'] },
+      { resource: 'records', actions: ['create', 'read', 'update'] },
+      { resource: 'medical_records', actions: ['create', 'read', 'update'] },
+      { resource: 'clinic', actions: ['read'] },
     ],
     navigationItems: [
       { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', href: '/dashboard' },
       { id: 'appointments', label: 'Gestión de Citas', icon: 'Calendar', href: '/dashboard/appointments' },
       { id: 'patients', label: 'Registro de Pacientes', icon: 'Users', href: '/dashboard/patients' },
-      { id: 'records', label: 'Historial Clínico', icon: 'FileText', href: '/dashboard/patient-history' },
-      { id: 'lab-results', label: 'Resultados', icon: 'Activity', href: '/dashboard/lab-results' },
-
+      { id: 'medical-records', label: 'Historial Médico', icon: 'FileText', href: '/dashboard/medical-records' },
+      { id: 'profile', label: 'Mi Perfil', icon: 'User', href: '/dashboard/profile' },
     ]
   }
 };

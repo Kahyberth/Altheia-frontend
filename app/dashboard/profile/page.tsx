@@ -79,7 +79,7 @@ import { addToast } from "@heroui/react";
 import {
   updateUserProfile,
 } from "@/services/user.service";
-import { getClinicByClinicId } from "@/services/clinic.service";
+import { getClinicByClinicId, getAllServices } from "@/services/clinic.service";
 import apiClient from "@/fetch/apiClient";
 import { useTheme } from "@/context/ThemeContext";
 import { PhysicianOnly } from "@/guard/RoleGuard";
@@ -153,6 +153,8 @@ export default function ProfilePage() {
   const [loginActivities, setLoginActivities] = useState<any[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [clinicEps, setClinicEps] = useState<Array<{id: string, name: string}>>([]);
+  const [clinicServices, setClinicServices] = useState<Array<{id: string, name: string}>>([]);
+  const [specialtyMap, setSpecialtyMap] = useState<Record<string, string>>({});
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [showAllActivitiesModal, setShowAllActivitiesModal] = useState(false);
@@ -317,6 +319,23 @@ export default function ProfilePage() {
         const clinicEpsData = clinicData.information?.["eps offered"] || [];
         setClinicEps(clinicEpsData);
 
+        // Load all services/specialties to create mapping
+        const servicesResponse = await getAllServices(1, 100);
+        const allServices = Array.isArray(servicesResponse.data) 
+          ? servicesResponse.data 
+          : (servicesResponse.data as any).data ?? [];
+        
+        // Create mapping of ID to name for all services
+        const serviceMapping: Record<string, string> = {};
+        allServices.forEach((service: any) => {
+          serviceMapping[service.id] = service.name;
+        });
+        setSpecialtyMap(serviceMapping);
+
+        // Get services offered by the clinic for the Select options
+        const clinicServicesData = clinicData.information?.["services offered"] || [];
+        setClinicServices(clinicServicesData);
+
         let profileData = null;
         let roleSpecificData = null;
 
@@ -333,6 +352,27 @@ export default function ProfilePage() {
                 blood_type: patientData.blood_type,
                 date_of_birth: patientData.date_of_birth,
               };
+            }
+            break;
+          case "physician":
+          case "doctor":
+            const physicianData = clinicData.clinic?.physicians?.find(
+              (p: any) => p.user_id === user.id
+            );
+            if (physicianData) {
+              profileData = physicianData.user;
+              roleSpecificData = {
+                physician_specialty: physicianData.physician_specialty,
+                license_number: physicianData.license_number,
+              };
+            }
+            break;
+          case "receptionist":
+            const receptionistData = clinicData.clinic?.receptionists?.find(
+              (r: any) => r.user_id === user.id
+            );
+            if (receptionistData) {
+              profileData = receptionistData.user;
             }
             break;
           case "owner":
@@ -355,7 +395,9 @@ export default function ProfilePage() {
             role: profileData.rol || user.role,
             phone: profileData.phone || "",
             physician_specialty:
+              roleSpecificData?.physician_specialty ||
               profileData.physician?.physician_specialty || "",
+            licenseNumber: roleSpecificData?.license_number || "",
             eps: roleSpecificData?.eps || "",
             address: roleSpecificData?.address || "",
             blood_type: roleSpecificData?.blood_type || "",
@@ -562,7 +604,10 @@ export default function ProfilePage() {
       return "Creador de la clínica";
     if (role === "patient") return "Paciente";
     if (role === "physician") {
-      return userData.physician_specialty || userData.department || "Médico";
+      // Show specialty name instead of ID
+      const specialtyId = userData.physician_specialty;
+      const specialtyName = specialtyId ? specialtyMap[specialtyId] : null;
+      return specialtyName || userData.department || "Médico";
     }
     return role.charAt(0).toUpperCase() + role.slice(1);
   })();
@@ -617,11 +662,10 @@ export default function ProfilePage() {
 
   const item = {
     hidden: { opacity: 0, y: 20 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: { type: "spring", stiffness: 300, damping: 24 },
-    },
+    show: { 
+      opacity: 1, 
+      y: 0
+    }
   };
 
   if (isLoading) {
@@ -767,12 +811,12 @@ export default function ProfilePage() {
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {displayRole !== "Creador de la clínica" &&
                           displayRole !== "Paciente" &&
-                          userData.department && (
+                          userData.physician_specialty && (
                             <Badge
                               variant="outline"
                               className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
                             >
-                              {userData.department}
+                              {specialtyMap[userData.physician_specialty] || userData.physician_specialty}
                             </Badge>
                           )}
                         <PhysicianOnly>
@@ -968,18 +1012,34 @@ export default function ProfilePage() {
                             >
                               Especialidad médica
                             </Label>
-                            <Input
-                              id="physician_specialty"
-                              name="physician_specialty"
+                            <Select
                               value={formData.physician_specialty}
-                              onChange={handleInputChange}
+                              onValueChange={(value) => 
+                                setFormData(prev => ({ ...prev, physician_specialty: value }))
+                              }
                               disabled={!editMode}
-                              className={`${
-                                editMode
-                                  ? "border-blue-300 dark:border-blue-600"
-                                  : ""
-                              } dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
-                            />
+                            >
+                              <SelectTrigger 
+                                className={`${
+                                  editMode
+                                    ? "border-blue-300 dark:border-blue-600"
+                                    : ""
+                                } dark:bg-slate-700 dark:border-slate-600 dark:text-white`}
+                              >
+                                <SelectValue placeholder="Seleccionar especialidad médica" />
+                              </SelectTrigger>
+                              <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                                {clinicServices.map((service) => (
+                                  <SelectItem 
+                                    key={service.id} 
+                                    value={service.id}
+                                    className="dark:text-white dark:hover:bg-slate-700"
+                                  >
+                                    {service.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         )}
 

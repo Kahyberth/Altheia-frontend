@@ -564,14 +564,14 @@ export default function AppointmentsPage() {
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" onClick={navigatePrevious}>
                           <ChevronLeft className="h-4 w-4" />
-                          <span className="sr-only">Previous</span>
+                          <span className="sr-only">Anterior</span>
                         </Button>
                         <Button variant="outline" size="icon" onClick={navigateNext}>
                           <ChevronRight className="h-4 w-4" />
-                          <span className="sr-only">Next</span>
+                          <span className="sr-only">Siguiente</span>
                         </Button>
                         <Button variant="outline" onClick={navigateToday}>
-                          Today
+                          Hoy
                         </Button>
                       </div>
 
@@ -614,7 +614,7 @@ export default function AppointmentsPage() {
                           className="h-8"
                           onClick={() => setViewMode("day")}
                         >
-                          Day
+                          Día
                         </Button>
                         <Button
                           variant={viewMode === "week" ? "default" : "ghost"}
@@ -622,7 +622,7 @@ export default function AppointmentsPage() {
                           className="h-8"
                           onClick={() => setViewMode("week")}
                         >
-                          Week
+                          Semana
                         </Button>
                         <Button
                           variant={viewMode === "list" ? "default" : "ghost"}
@@ -630,12 +630,12 @@ export default function AppointmentsPage() {
                           className="h-8"
                           onClick={() => setViewMode("list")}
                         >
-                          List
+                          Lista
                         </Button>
                       </div>
                       <Button onClick={() => setShowNewAppointmentDialog(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        {user?.role === 'patient' ? "Nueva Cita" : "New Appointment"}
+                        {user?.role === 'patient' ? "Nueva Cita" : "Nueva Cita"}
                       </Button>
                     </div>
                   </div>
@@ -665,12 +665,12 @@ export default function AppointmentsPage() {
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="checked-in">Checked In</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="scheduled">Programada</SelectItem>
+                      <SelectItem value="confirmed">Confirmada</SelectItem>
+                      <SelectItem value="checked-in">Confirmada</SelectItem>
+                      <SelectItem value="completed">Completada</SelectItem>
+                      <SelectItem value="cancelled">Cancelada</SelectItem>
                     </SelectContent>
                   </Select>
                   {user?.role !== 'patient' && (
@@ -689,18 +689,12 @@ export default function AppointmentsPage() {
                     </Select>
                   )}
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="bg-white">
-                        <Filter className="mr-2 h-4 w-4" />
-                        More Filters
-                      </Button>
-                    </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel>Additional Filters</DropdownMenuLabel>
+                      <DropdownMenuLabel>Filtros</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <div className="p-2">
                         <div className="mb-2 space-y-1">
-                          <label className="text-xs font-medium">Location</label>
+                          <label className="text-xs font-medium">Ubicación</label>
                           <Select value={locationFilter} onValueChange={setLocationFilter}>
                             <SelectTrigger className="h-8 w-full">
                               <SelectValue placeholder="All Locations" />
@@ -708,13 +702,13 @@ export default function AppointmentsPage() {
                           </Select>
                         </div>
                         <div className="mb-2 space-y-1">
-                          <label className="text-xs font-medium">Appointment Type</label>
+                          <label className="text-xs font-medium">Tipo de Cita</label>
                           <Select value={typeFilter} onValueChange={setTypeFilter}>
                             <SelectTrigger className="h-8 w-full">
                               <SelectValue placeholder="All Types" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Types</SelectItem>
+                              <SelectItem value="all">Todos</SelectItem>
                               {appointmentTypes.map((type) => (
                                 <SelectItem key={type.id} value={type.id}>
                                   {type.name}
@@ -735,7 +729,7 @@ export default function AppointmentsPage() {
                               setSearchQuery("")
                             }}
                           >
-                            Reset Filters
+                            Reiniciar Filtros
                           </Button>
                         </div>
                       </div>
@@ -753,10 +747,10 @@ export default function AppointmentsPage() {
                   <Card>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle>Appointment List</CardTitle>
+                        <CardTitle>Lista de Citas</CardTitle>
                         <div className="text-sm text-slate-500">
                           {filteredAppointments.length}{" "}
-                          {filteredAppointments.length === 1 ? "appointment" : "appointments"} found
+                          {filteredAppointments.length === 1 ? "cita" : "citas"} encontradas
                         </div>
                       </div>
                     </CardHeader>
@@ -859,9 +853,9 @@ export default function AppointmentsPage() {
                           <div className="rounded-full bg-slate-100 p-3">
                             <Search className="h-6 w-6 text-slate-400" />
                           </div>
-                          <h3 className="mt-4 text-lg font-medium">No appointments found</h3>
+                          <h3 className="mt-4 text-lg font-medium">No se encontraron citas</h3>
                           <p className="mt-1 text-sm text-slate-500">
-                            Try adjusting your search or filters to find what you're looking for.
+                            Intenta ajustar tu búsqueda o filtros para encontrar lo que buscas.
                           </p>
                           <Button
                             className="mt-4"

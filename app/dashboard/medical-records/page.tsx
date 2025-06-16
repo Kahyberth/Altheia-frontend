@@ -2,22 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from "next/navigation"
 import {
   FileText,
   Search,
   Filter,
   Calendar,
-  FileImage,
-  FilePlus,
   Download,
   Printer,
   Share2,
-  ChevronDown,
-  AlertCircle,
-  CheckCircle,
   X,
   Eye,
-  History,
   Lock,
   Shield,
   User,
@@ -27,1513 +22,1376 @@ import {
   Activity,
   Pill,
   Zap,
+  AlertTriangle,
+  Clock,
+  ChevronRight,
+  ChevronLeft,
+  Heart,
+  Users,
+  MapPin,
+  TrendingUp,
+  BarChart3,
+  FileSearch,
+  Sparkles,
+  Star,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  Bookmark,
+  Tag,
+  Plus,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { useMobile } from "@/hooks/use-mobile"
-import { DocumentViewer } from "@/components/document-viewer"
-import { LabResultsChart } from "@/components/lab-results-chart"
-import { MedicalTimelineView } from "@/components/medical-timeline-view"
-import { DocumentUploader } from "@/components/document-uploader"
-import { ImageViewer } from "@/components/image-viewer"
+import { useRole } from "@/hooks/useRole"
+import { RoleGuard } from "@/guard/RoleGuard"
+import { UserRole } from "@/types/auth"
+import {
+  medicalHistoryService,
+  type MedicalHistoryResponse,
+  type ClinicMedicalHistoryResponse,
+  type MedicalRecord,
+  type PatientMedicalInfo,
+} from "@/services/medical-history.service"
 
-// Sample patient data
-const patients = [
-  {
-    id: "P-1001",
-    name: "Sarah Johnson",
-    age: 42,
-    gender: "Female",
-    dob: "1981-05-10",
-    mrn: "MRN-10042",
-    avatar: "/placeholder.svg?height=128&width=128&text=SJ",
+// Enhanced record type configurations with better visual hierarchy
+const recordTypes = {
+  diagnoses: {
+    name: "Diagnósticos",
+    icon: Stethoscope,
+    color: "bg-gradient-to-br from-red-500 to-red-600",
+    bgColor: "bg-red-50",
+    textColor: "text-red-700",
+    borderColor: "border-red-200",
+    lightColor: "bg-red-100",
+    priority: "high",
   },
-  {
-    id: "P-1002",
-    name: "Michael Chen",
-    age: 35,
-    gender: "Male",
-    dob: "1988-09-22",
-    mrn: "MRN-10043",
-    avatar: "/placeholder.svg?height=128&width=128&text=MC",
+  medications: {
+    name: "Medicamentos",
+    icon: Pill,
+    color: "bg-gradient-to-br from-emerald-500 to-emerald-600",
+    bgColor: "bg-emerald-50",
+    textColor: "text-emerald-700",
+    borderColor: "border-emerald-200",
+    lightColor: "bg-emerald-100",
+    priority: "high",
   },
-  {
-    id: "P-1003",
-    name: "Amanda Rodriguez",
-    age: 28,
-    gender: "Female",
-    dob: "1995-03-15",
-    mrn: "MRN-10044",
-    avatar: "/placeholder.svg?height=128&width=128&text=AR",
+  lab_results: {
+    name: "Laboratorios",
+    icon: Microscope,
+    color: "bg-gradient-to-br from-blue-500 to-blue-600",
+    bgColor: "bg-blue-50",
+    textColor: "text-blue-700",
+    borderColor: "border-blue-200",
+    lightColor: "bg-blue-100",
+    priority: "medium",
   },
+  treatments: {
+    name: "Tratamientos",
+    icon: Clipboard,
+    color: "bg-gradient-to-br from-orange-500 to-orange-600",
+    bgColor: "bg-orange-50",
+    textColor: "text-orange-700",
+    borderColor: "border-orange-200",
+    lightColor: "bg-orange-100",
+    priority: "high",
+  },
+  procedures: {
+    name: "Procedimientos",
+    icon: Zap,
+    color: "bg-gradient-to-br from-purple-500 to-purple-600",
+    bgColor: "bg-purple-50",
+    textColor: "text-purple-700",
+    borderColor: "border-purple-200",
+    lightColor: "bg-purple-100",
+    priority: "medium",
+  },
+  vitals: {
+    name: "Signos Vitales",
+    icon: Activity,
+    color: "bg-gradient-to-br from-cyan-500 to-cyan-600",
+    bgColor: "bg-cyan-50",
+    textColor: "text-cyan-700",
+    borderColor: "border-cyan-200",
+    lightColor: "bg-cyan-100",
+    priority: "low",
+  },
+}
+
+const filterCategories = [
+  { id: "all", name: "Todos los registros", icon: FileText, count: 0 },
+  ...Object.entries(recordTypes).map(([key, value]) => ({
+    id: key,
+    name: value.name,
+    icon: value.icon,
+    count: 0,
+  })),
 ]
 
-// Sample medical record categories
-const recordCategories = [
-  { id: "all", name: "All Records", icon: FileText },
-  { id: "diagnoses", name: "Diagnoses", icon: Stethoscope },
-  { id: "treatments", name: "Treatment Plans", icon: Clipboard },
-  { id: "lab", name: "Lab Results", icon: Microscope },
-  { id: "imaging", name: "Imaging", icon: FileImage },
-  { id: "medications", name: "Medications", icon: Pill },
-  { id: "vitals", name: "Vital Signs", icon: Activity },
-  { id: "procedures", name: "Procedures", icon: Zap },
-]
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
 
-// Sample medical records
-const medicalRecords = [
-  {
-    id: "REC-1001",
-    patientId: "P-1001",
-    type: "diagnoses",
-    title: "Hypertension Diagnosis",
-    date: "2023-04-15",
-    provider: "Dr. Rebecca Taylor",
-    status: "active",
-    content: {
-      diagnosis: "Essential (primary) hypertension",
-      icdCode: "I10",
-      notes:
-        "Patient presents with consistently elevated blood pressure readings over multiple visits. Recommended lifestyle modifications and medication.",
-      followUp: "2 weeks",
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 24,
     },
-    documents: [
-      {
-        id: "DOC-1001",
-        name: "Hypertension Assessment.pdf",
-        type: "pdf",
-        size: "1.2 MB",
-        uploadedBy: "Dr. Rebecca Taylor",
-        uploadedAt: "2023-04-15T14:30:00",
-        url: "#",
-      },
-    ],
   },
-  {
-    id: "REC-1002",
-    patientId: "P-1001",
-    type: "lab",
-    title: "Comprehensive Metabolic Panel",
-    date: "2023-04-10",
-    provider: "LabCorp",
-    status: "completed",
-    content: {
-      results: [
-        { name: "Glucose", value: 92, unit: "mg/dL", range: "70-99", status: "normal" },
-        { name: "BUN", value: 18, unit: "mg/dL", range: "7-20", status: "normal" },
-        { name: "Creatinine", value: 0.9, unit: "mg/dL", range: "0.6-1.2", status: "normal" },
-        { name: "Sodium", value: 141, unit: "mmol/L", range: "136-145", status: "normal" },
-        { name: "Potassium", value: 4.5, unit: "mmol/L", range: "3.5-5.1", status: "normal" },
-        { name: "Chloride", value: 102, unit: "mmol/L", range: "98-107", status: "normal" },
-        { name: "CO2", value: 24, unit: "mmol/L", range: "22-29", status: "normal" },
-        { name: "Calcium", value: 9.5, unit: "mg/dL", range: "8.5-10.2", status: "normal" },
-        { name: "Total Protein", value: 7.2, unit: "g/dL", range: "6.4-8.2", status: "normal" },
-        { name: "Albumin", value: 4.3, unit: "g/dL", range: "3.5-5.0", status: "normal" },
-        { name: "Bilirubin, Total", value: 0.8, unit: "mg/dL", range: "0.1-1.2", status: "normal" },
-        { name: "Alkaline Phosphatase", value: 68, unit: "U/L", range: "40-129", status: "normal" },
-        { name: "AST", value: 22, unit: "U/L", range: "0-40", status: "normal" },
-        { name: "ALT", value: 25, unit: "U/L", range: "0-44", status: "normal" },
-      ],
-      summary: "All values within normal range. No significant abnormalities detected.",
-    },
-    documents: [
-      {
-        id: "DOC-1002",
-        name: "CMP Results.pdf",
-        type: "pdf",
-        size: "2.4 MB",
-        uploadedBy: "LabCorp",
-        uploadedAt: "2023-04-10T09:15:00",
-        url: "#",
-      },
-    ],
-  },
-  {
-    id: "REC-1003",
-    patientId: "P-1001",
-    type: "imaging",
-    title: "Chest X-Ray",
-    date: "2023-04-05",
-    provider: "Radiology Dept.",
-    status: "completed",
-    content: {
-      procedure: "PA and lateral chest radiograph",
-      findings:
-        "Heart size is normal. Lungs are clear without evidence of infiltrate or effusion. No pneumothorax. No pleural effusion. Visualized bony structures are intact.",
-      impression: "Normal chest radiograph. No acute cardiopulmonary process.",
-    },
-    documents: [
-      {
-        id: "DOC-1003",
-        name: "Chest X-Ray.jpg",
-        type: "image",
-        size: "8.7 MB",
-        uploadedBy: "Dr. James Wilson",
-        uploadedAt: "2023-04-05T11:20:00",
-        url: "/placeholder.svg?height=800&width=600&text=X-Ray+Image",
-      },
-      {
-        id: "DOC-1004",
-        name: "Radiology Report.pdf",
-        type: "pdf",
-        size: "1.1 MB",
-        uploadedBy: "Dr. James Wilson",
-        uploadedAt: "2023-04-05T14:45:00",
-        url: "#",
-      },
-    ],
-  },
-  {
-    id: "REC-1004",
-    patientId: "P-1001",
-    type: "treatments",
-    title: "Hypertension Treatment Plan",
-    date: "2023-04-16",
-    provider: "Dr. Rebecca Taylor",
-    status: "active",
-    content: {
-      medications: [
-        {
-          name: "Lisinopril",
-          dosage: "10mg",
-          frequency: "Once daily",
-          duration: "3 months, then reassess",
-        },
-      ],
-      lifestyle: [
-        "DASH diet with reduced sodium intake",
-        "Regular aerobic exercise, 30 minutes, 5 days per week",
-        "Weight loss goal of 5-10 pounds",
-        "Limit alcohol consumption",
-        "Smoking cessation",
-      ],
-      monitoring: "Home blood pressure monitoring twice daily. Record in provided log.",
-      followUp: "2 weeks for medication check, then monthly for 3 months",
-    },
-    documents: [
-      {
-        id: "DOC-1005",
-        name: "Hypertension Treatment Plan.pdf",
-        type: "pdf",
-        size: "0.9 MB",
-        uploadedBy: "Dr. Rebecca Taylor",
-        uploadedAt: "2023-04-16T16:20:00",
-        url: "#",
-      },
-      {
-        id: "DOC-1006",
-        name: "DASH Diet Guidelines.pdf",
-        type: "pdf",
-        size: "1.5 MB",
-        uploadedBy: "Dr. Rebecca Taylor",
-        uploadedAt: "2023-04-16T16:22:00",
-        url: "#",
-      },
-    ],
-  },
-  {
-    id: "REC-1005",
-    patientId: "P-1001",
-    type: "medications",
-    title: "Current Medications",
-    date: "2023-04-16",
-    provider: "Dr. Rebecca Taylor",
-    status: "active",
-    content: {
-      medications: [
-        {
-          name: "Lisinopril",
-          dosage: "10mg",
-          frequency: "Once daily",
-          startDate: "2023-04-16",
-          endDate: null,
-          prescriber: "Dr. Rebecca Taylor",
-          pharmacy: "MediCare Pharmacy",
-          refills: 3,
-        },
-        {
-          name: "Multivitamin",
-          dosage: "1 tablet",
-          frequency: "Once daily",
-          startDate: "2022-01-10",
-          endDate: null,
-          prescriber: "Dr. Rebecca Taylor",
-          pharmacy: "Over the counter",
-          refills: null,
-        },
-      ],
-      allergies: ["Penicillin - Hives", "Sulfa drugs - Rash"],
-    },
-    documents: [
-      {
-        id: "DOC-1007",
-        name: "Medication List.pdf",
-        type: "pdf",
-        size: "0.7 MB",
-        uploadedBy: "Dr. Rebecca Taylor",
-        uploadedAt: "2023-04-16T16:25:00",
-        url: "#",
-      },
-    ],
-  },
-  {
-    id: "REC-1006",
-    patientId: "P-1001",
-    type: "vitals",
-    title: "Vital Signs",
-    date: "2023-04-15",
-    provider: "Nurse Johnson",
-    status: "completed",
-    content: {
-      readings: [
-        { name: "Blood Pressure", value: "142/88", unit: "mmHg" },
-        { name: "Heart Rate", value: 76, unit: "bpm" },
-        { name: "Respiratory Rate", value: 16, unit: "breaths/min" },
-        { name: "Temperature", value: 98.6, unit: "°F" },
-        { name: "Oxygen Saturation", value: 98, unit: "%" },
-        { name: "Weight", value: 165, unit: "lbs" },
-        { name: "Height", value: 65, unit: "in" },
-        { name: "BMI", value: 27.5, unit: "kg/m²" },
-      ],
-      notes: "Blood pressure elevated. Patient reports compliance with current medications.",
-    },
-    documents: [],
-  },
-  {
-    id: "REC-1007",
-    patientId: "P-1001",
-    type: "lab",
-    title: "Lipid Panel",
-    date: "2023-04-10",
-    provider: "LabCorp",
-    status: "completed",
-    content: {
-      results: [
-        { name: "Total Cholesterol", value: 210, unit: "mg/dL", range: "<200", status: "high" },
-        { name: "HDL Cholesterol", value: 45, unit: "mg/dL", range: ">40", status: "normal" },
-        { name: "LDL Cholesterol", value: 135, unit: "mg/dL", range: "<100", status: "high" },
-        { name: "Triglycerides", value: 150, unit: "mg/dL", range: "<150", status: "borderline" },
-      ],
-      summary:
-        "Elevated total cholesterol and LDL cholesterol. Recommend lifestyle modifications and possible medication if not improved in 3 months.",
-    },
-    documents: [
-      {
-        id: "DOC-1008",
-        name: "Lipid Panel Results.pdf",
-        type: "pdf",
-        size: "1.8 MB",
-        uploadedBy: "LabCorp",
-        uploadedAt: "2023-04-10T09:20:00",
-        url: "#",
-      },
-    ],
-  },
-  {
-    id: "REC-1008",
-    patientId: "P-1001",
-    type: "procedures",
-    title: "ECG",
-    date: "2023-04-15",
-    provider: "Dr. Rebecca Taylor",
-    status: "completed",
-    content: {
-      procedure: "12-lead Electrocardiogram",
-      findings: "Normal sinus rhythm. Rate 72 bpm. Normal axis. No ST-T wave changes. No evidence of ischemia.",
-      interpretation: "Normal ECG.",
-    },
-    documents: [
-      {
-        id: "DOC-1009",
-        name: "ECG Recording.pdf",
-        type: "pdf",
-        size: "2.2 MB",
-        uploadedBy: "Dr. Rebecca Taylor",
-        uploadedAt: "2023-04-15T15:10:00",
-        url: "#",
-      },
-    ],
-  },
-]
+}
 
-// Sample audit trail entries
-const auditTrail = [
-  {
-    id: "AUD-1001",
-    recordId: "REC-1001",
-    action: "view",
-    user: "Dr. Rebecca Taylor",
-    timestamp: "2023-05-18T09:30:45",
-    details: "Viewed hypertension diagnosis record",
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 24,
+    },
   },
-  {
-    id: "AUD-1002",
-    recordId: "REC-1001",
-    action: "edit",
-    user: "Dr. Rebecca Taylor",
-    timestamp: "2023-05-17T14:22:10",
-    details: "Updated diagnosis notes",
+  hover: {
+    y: -4,
+    scale: 1.02,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+    },
   },
-  {
-    id: "AUD-1003",
-    recordId: "REC-1002",
-    action: "view",
-    user: "Dr. James Wilson",
-    timestamp: "2023-05-16T11:15:32",
-    details: "Viewed lab results",
-  },
-  {
-    id: "AUD-1004",
-    recordId: "REC-1003",
-    action: "upload",
-    user: "Dr. James Wilson",
-    timestamp: "2023-04-05T11:20:00",
-    details: "Uploaded chest X-ray image",
-  },
-  {
-    id: "AUD-1005",
-    recordId: "REC-1004",
-    action: "create",
-    user: "Dr. Rebecca Taylor",
-    timestamp: "2023-04-16T16:20:00",
-    details: "Created hypertension treatment plan",
-  },
-]
+}
 
 export default function MedicalRecordsPage() {
+  const router = useRouter()
   const isMobile = useMobile()
+  const { user, isPatient, isPhysician, isOwner, isReceptionist, clinicId } = useRole()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedPatient, setSelectedPatient] = useState<string | null>("P-1001") // Default to first patient
+  const [data, setData] = useState<MedicalHistoryResponse | null>(null)
+  const [clinicData, setClinicData] = useState<ClinicMedicalHistoryResponse | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedPatientId, setSelectedPatientId] = useState<string>("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedRecord, setSelectedRecord] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null)
-  const [showUploadDialog, setShowUploadDialog] = useState(false)
-  const [showDocumentViewer, setShowDocumentViewer] = useState(false)
-  const [selectedDocument, setSelectedDocument] = useState<any>(null)
-  const [showImageViewer, setShowImageViewer] = useState(false)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<"list" | "timeline">("list")
-
-  useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(20)
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [sortBy, setSortBy] = useState<"date" | "type" | "priority">("date")
 
   useEffect(() => {
     setSidebarOpen(!isMobile)
   }, [isMobile])
 
-  // Filter records based on selected patient, category, search query, and date range
-  const filteredRecords = medicalRecords.filter((record) => {
-    // Filter by patient
-    if (selectedPatient && record.patientId !== selectedPatient) return false
+  useEffect(() => {
+    if (user) {
+      loadMedicalHistory()
+    }
+  }, [user, currentPage])
 
-    // Filter by category
-    if (selectedCategory !== "all" && record.type !== selectedCategory) return false
+  useEffect(() => {
+    if (clinicId && (isPhysician() || isOwner() || isReceptionist())) {
+      loadMedicalHistory()
+    }
+  }, [clinicId, currentPage, pageSize])
 
-    // Filter by search query
-    if (
-      searchQuery &&
-      !record.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !record.provider.toLowerCase().includes(searchQuery.toLowerCase())
+  const loadMedicalHistory = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      if (isPatient()) {
+        if (!user?.id) {
+          setError("No se pudo obtener el ID del paciente")
+          return
+        }
+        const response = await medicalHistoryService.getPatientMedicalHistory(user.id)
+        if (response.success && response.data) {
+          setData(response)
+          if (response.data.patients.length === 1) {
+            setSelectedPatientId(response.data.patients[0].id)
+          }
+        } else {
+          setError("No se encontró historial médico")
+        }
+      } else if (isPhysician() || isOwner() || isReceptionist()) {
+        if (!clinicId) {
+          setError("No se pudo obtener el ID de la clínica")
+          return
+        }
+        const response = await medicalHistoryService.getClinicMedicalHistory(clinicId, currentPage, pageSize)
+        if (response.success && response.data) {
+          setClinicData(response)
+          if (response.data.length > 0) {
+            setSelectedPatientId(response.data[0].patient.id)
+          }
+        } else {
+          setError("No se encontró historial médico")
+        }
+      } else {
+        setError("No tienes permisos para acceder a esta información")
+        return
+      }
+    } catch (err: any) {
+      console.error("Error loading medical history:", err)
+
+      if (err.response?.status === 404) {
+        setError(
+          isPatient()
+            ? "No tienes historial médico registrado aún. Tu primera consulta médica creará automáticamente tu historial."
+            : "No se encontró historial médico para esta clínica",
+        )
+      } else if (err.response?.status === 403) {
+        setError("No tienes permisos para acceder a este historial.")
+      } else if (err.response?.status === 500) {
+        setError("Error del servidor. Por favor, inténtalo de nuevo en unos minutos.")
+      } else {
+        setError("Error al cargar el historial médico. Verifica tu conexión e inténtalo de nuevo.")
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const getCurrentPatient = (): PatientMedicalInfo | null => {
+    if (isPatient()) {
+      return data?.data.patients[0] || null
+    }
+
+    if (clinicData?.data) {
+      return (
+        clinicData.data.find((p) => p.patient.id === selectedPatientId)?.patient || clinicData.data[0]?.patient || null
+      )
+    }
+
+    return null
+  }
+
+  const getCurrentRecords = (): MedicalRecord[] => {
+    const currentPatient = getCurrentPatient()
+    if (!currentPatient) return []
+
+    let records: MedicalRecord[] = []
+
+    if (isPatient()) {
+      records = data?.data.medicalRecords?.filter((record) => record.patientId === currentPatient.id) || []
+    } else if (clinicData?.data) {
+      const patientHistory = clinicData.data.find((p) => p.patient.id === currentPatient.id)
+      records = patientHistory?.medicalRecords || []
+    }
+
+    if (selectedCategory !== "all") {
+      records = records.filter((record) => record.type === selectedCategory)
+    }
+
+    if (searchQuery) {
+      records = records.filter(
+        (record) =>
+          record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          record.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          record.content.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    }
+
+    // Enhanced sorting
+    return records.sort((a, b) => {
+      switch (sortBy) {
+        case "type":
+          return a.type.localeCompare(b.type)
+        case "priority":
+          const aPriority = recordTypes[a.type as keyof typeof recordTypes]?.priority || "low"
+          const bPriority = recordTypes[b.type as keyof typeof recordTypes]?.priority || "low"
+          const priorityOrder = { high: 3, medium: 2, low: 1 }
+          return (
+            priorityOrder[bPriority as keyof typeof priorityOrder] -
+            priorityOrder[aPriority as keyof typeof priorityOrder]
+          )
+        default:
+          return new Date(b.date).getTime() - new Date(a.date).getTime()
+      }
+    })
+  }
+
+  const currentPatient = getCurrentPatient()
+  const currentRecords = getCurrentRecords()
+  const selectedRecordDetails = selectedRecord ? currentRecords.find((r) => r.id === selectedRecord) : null
+
+  // Update filter categories with counts
+  const updatedFilterCategories = filterCategories.map((category) => ({
+    ...category,
+    count:
+      category.id === "all"
+        ? currentRecords.length
+        : currentRecords.filter((record) => record.type === category.id).length,
+  }))
+
+  const getRecordTypeConfig = (type: string) => {
+    return (
+      recordTypes[type as keyof typeof recordTypes] || {
+        name: type,
+        icon: FileText,
+        color: "bg-gradient-to-br from-gray-500 to-gray-600",
+        bgColor: "bg-gray-50",
+        textColor: "text-gray-700",
+        borderColor: "border-gray-200",
+        lightColor: "bg-gray-100",
+        priority: "low",
+      }
     )
-      return false
+  }
 
-    // Filter by date range
-    if (dateRange) {
-      const recordDate = new Date(record.date)
-      const startDate = dateRange.start ? new Date(dateRange.start) : null
-      const endDate = dateRange.end ? new Date(dateRange.end) : null
-
-      if (startDate && recordDate < startDate) return false
-      if (endDate && recordDate > endDate) return false
-    }
-
-    return true
-  })
-
-  // Get the selected record details
-  const recordDetails = selectedRecord ? medicalRecords.find((record) => record.id === selectedRecord) : null
-
-  // Get the selected patient details
-  const patientDetails = selectedPatient ? patients.find((patient) => patient.id === selectedPatient) : null
-
-  // Get audit trail for selected record
-  const recordAuditTrail = selectedRecord
-    ? auditTrail
-        .filter((entry) => entry.recordId === selectedRecord)
-        .sort((a, b) => {
-          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        })
-    : []
-
-  const handleDocumentClick = (document: any) => {
-    setSelectedDocument(document)
-    if (document.type === "image") {
-      setSelectedImage(document.url)
-      setShowImageViewer(true)
-    } else {
-      setShowDocumentViewer(true)
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200"
+      case "completed":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "pending":
+        return "bg-amber-100 text-amber-800 border-amber-200"
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle className="h-3 w-3" />
+      case "completed":
+        return <CheckCircle className="h-3 w-3" />
+      case "pending":
+        return <Clock className="h-3 w-3" />
+      case "cancelled":
+        return <X className="h-3 w-3" />
+      default:
+        return <Info className="h-3 w-3" />
+    }
   }
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+  const getRecordSummary = (record: MedicalRecord) => {
+    if (record.content.description) return record.content.description
+    if (record.content.diagnosis) return record.content.diagnosis
+    if (record.content.symptoms) return record.content.symptoms
+    if (record.content.consult_reason) return record.content.consult_reason
+    return "No hay resumen disponible"
   }
+
+  const getPatientStats = () => {
+    if (!currentRecords.length) return null
+
+    const activeRecords = currentRecords.filter((r) => r.status === "active").length
+    const medications = currentRecords.filter((r) => r.type === "medications").length
+    const diagnoses = currentRecords.filter((r) => r.type === "diagnoses").length
+    const lastVisit = new Date(Math.max(...currentRecords.map((r) => new Date(r.date).getTime())))
+    const recentRecords = currentRecords.filter((r) => {
+      const recordDate = new Date(r.date)
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      return recordDate >= thirtyDaysAgo
+    }).length
+
+    return { activeRecords, medications, diagnoses, lastVisit, recentRecords }
+  }
+
+  const stats = getPatientStats()
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+      <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="flex flex-col items-center"
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center space-y-6"
         >
-          <div className="relative h-12 w-12 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600">
-            <FileText className="absolute inset-0 m-auto text-white h-6 w-6" />
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-blue-200 rounded-full animate-spin"></div>
+            <div className="w-20 h-20 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Heart className="h-8 w-8 text-blue-600 animate-pulse" />
+            </div>
           </div>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: 150 }}
-            transition={{ delay: 0.5, duration: 1, ease: "easeInOut" }}
-            className="mt-6 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
-          />
-          <p className="mt-4 text-sm text-slate-600">Loading medical records...</p>
+          <div className="text-center space-y-2">
+            <h3 className="text-xl font-semibold text-gray-900">Cargando Historial Médico</h3>
+            <p className="text-sm text-gray-600">Preparando tu información médica...</p>
+            <div className="flex items-center justify-center space-x-1">
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+            </div>
+          </div>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50">
-      {/* Sidebar */}
+    <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50">
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-      {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header is included in the DashboardSidebar component */}
-
-        {/* Medical Records Content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          <motion.div initial="hidden" animate="show" variants={container} className="mx-auto max-w-7xl space-y-6">
-            {/* Page Title */}
-            <motion.div variants={item} className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold tracking-tight">Medical Records</h1>
-              <p className="text-sm text-slate-500">View and manage patient medical records securely</p>
-            </motion.div>
-
-            {/* Patient Selection and Actions */}
-            <motion.div variants={item}>
-              <Card>
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                      <div className="w-full md:w-64">
-                        <Select
-                          value={selectedPatient || ""}
-                          onValueChange={(value) => {
-                            setSelectedPatient(value)
-                            setSelectedRecord(null)
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Patient" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {patients.map((patient) => (
-                              <SelectItem key={patient.id} value={patient.id}>
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-6 w-6">
-                                    <AvatarImage src={patient.avatar || "/placeholder.svg"} alt={patient.name} />
-                                    <AvatarFallback>
-                                      {patient.name
-                                        .split(" ")
-                                        .map((n) => n[0])
-                                        .join("")}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span>{patient.name}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+        <main className="flex-1 overflow-auto">
+          {error ? (
+            <div className="flex items-center justify-center h-full bg-gradient-to-br from-red-50 to-pink-100">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center max-w-md mx-auto p-8"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring" }}
+                  className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                >
+                  <AlertTriangle className="h-10 w-10 text-red-500" />
+                </motion.div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">No se pudo cargar el historial</h3>
+                <p className="text-gray-600 mb-8 leading-relaxed">{error}</p>
+                <Button
+                  onClick={loadMedicalHistory}
+                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+                >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                    className="mr-2"
+                  >
+                    🔄
+                  </motion.div>
+                  Reintentar
+                </Button>
+              </motion.div>
+            </div>
+          ) : (
+            <motion.div variants={containerVariants} initial="hidden" animate="visible" className="p-6 space-y-8">
+              {/* Enhanced Header */}
+              <motion.div
+                variants={itemVariants}
+                className="bg-white rounded-3xl shadow-lg border border-white/20 backdrop-blur-sm p-8"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl">
+                        <FileText className="h-6 w-6 text-white" />
                       </div>
+                      <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                          {isPatient() ? "Mi Historial Médico" : "Registros Médicos"}
+                        </h1>
+                        <p className="text-gray-600 mt-1">
+                          {isPatient()
+                            ? "Consulta tu historial médico completo y documentos asociados"
+                            : "Consulta y gestiona los registros médicos de los pacientes"}
+                        </p>
+                      </div>
+                    </div>
+                    {(data?.data.metadata || clinicData?.summary) && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock className="h-4 w-4" />
+                        <span>
+                          Última actualización:{" "}
+                          {data?.data.metadata
+                            ? new Date(data.data.metadata.lastUpdated).toLocaleDateString()
+                            : clinicData?.summary
+                              ? new Date(clinicData.summary.lastUpdated).toLocaleDateString()
+                              : ""}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-                      {patientDetails && (
-                        <div className="flex items-center gap-3 rounded-lg border bg-white p-2 md:ml-2">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={patientDetails.avatar || "/placeholder.svg"} alt={patientDetails.name} />
-                            <AvatarFallback>
-                              {patientDetails.name
+                  <div className="flex items-center gap-3">
+                    <RoleGuard allowedRoles={[UserRole.PHYSICIAN, UserRole.OWNER]}>
+                      <Button
+                        onClick={() => router.push('/dashboard/new-medical-records')}
+                        className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 h-12 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
+                      >
+                        <Plus className="h-5 w-5 mr-2" />
+                        Nueva Historia Clínica
+                      </Button>
+                    </RoleGuard>
+
+                    <RoleGuard allowedRoles={[UserRole.PHYSICIAN, UserRole.OWNER, UserRole.RECEPTIONIST]}>
+                      {clinicData && clinicData.data.length > 1 && (
+                        <div className="min-w-[320px]">
+                          <Select
+                            value={selectedPatientId}
+                            onValueChange={(value) => {
+                              setSelectedPatientId(value)
+                              setSelectedRecord(null)
+                            }}
+                          >
+                            <SelectTrigger className="w-full h-12 border-2 border-gray-200 hover:border-blue-300 transition-colors">
+                              <SelectValue placeholder="Seleccionar Paciente" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {clinicData.data.map((patientHistory) => (
+                                <SelectItem key={patientHistory.patient.id} value={patientHistory.patient.id}>
+                                  <div className="flex items-center gap-3 py-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage
+                                        src={patientHistory.patient.avatar || "/placeholder.svg"}
+                                        alt={patientHistory.patient.name}
+                                      />
+                                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                                        {patientHistory.patient.name
+                                          .split(" ")
+                                          .map((n) => n[0])
+                                          .join("")}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <span className="font-medium">{patientHistory.patient.name}</span>
+                                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                                        <span>({patientHistory.patient.mrn})</span>
+                                        <Badge variant="secondary" className="text-xs">
+                                          {patientHistory.recordCount} registros
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </RoleGuard>
+                  </div>
+                </div>
+
+                {/* Enhanced Clinic Summary */}
+                <RoleGuard allowedRoles={[UserRole.PHYSICIAN, UserRole.OWNER, UserRole.RECEPTIONIST]}>
+                  {clinicData?.summary && (
+                    <motion.div variants={itemVariants} className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200 hover:shadow-lg transition-all duration-200">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-blue-500 rounded-xl">
+                            <Users className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-blue-600">Total Pacientes</p>
+                            <p className="text-2xl font-bold text-blue-900">{clinicData.summary.totalPatients}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-2xl border border-emerald-200 hover:shadow-lg transition-all duration-200">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-emerald-500 rounded-xl">
+                            <FileText className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-emerald-600">Total Registros</p>
+                            <p className="text-2xl font-bold text-emerald-900">
+                              {clinicData.summary.totalMedicalRecords}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-2xl border border-purple-200 hover:shadow-lg transition-all duration-200">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-purple-500 rounded-xl">
+                            <TrendingUp className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-purple-600">Actividad Reciente</p>
+                            <p className="text-sm font-bold text-purple-900">
+                              {new Date(clinicData.summary.recentActivity).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-2xl border border-orange-200 hover:shadow-lg transition-all duration-200">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-orange-500 rounded-xl">
+                            <Star className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-orange-600">Más Activo</p>
+                            <p className="text-sm font-bold text-orange-900 truncate">
+                              {clinicData.summary.mostActivePatient}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </RoleGuard>
+              </motion.div>
+
+              {/* Enhanced Patient Info */}
+              {currentPatient && (
+                <motion.div variants={itemVariants}>
+                  <Card className="overflow-hidden shadow-xl border-0 bg-white">
+                    <CardContent className="p-0">
+                      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-8 text-white relative overflow-hidden">
+                        <div className="absolute inset-0 bg-black/10"></div>
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+
+                        <div className="relative z-10 flex items-center gap-6">
+                          <Avatar className="h-20 w-20 border-4 border-white/30 shadow-xl">
+                            <AvatarImage src={currentPatient.avatar || "/placeholder.svg"} alt={currentPatient.name} />
+                            <AvatarFallback className="text-xl bg-white/20 text-white font-bold">
+                              {currentPatient.name
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="font-medium">{patientDetails.name}</p>
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                              <span>
-                                {patientDetails.age} • {patientDetails.gender}
-                              </span>
-                              <span>•</span>
-                              <span>DOB: {new Date(patientDetails.dob).toLocaleDateString()}</span>
-                              <span>•</span>
-                              <span>{patientDetails.mrn}</span>
+                          <div className="flex-1">
+                            <h2 className="text-3xl font-bold mb-2">{currentPatient.name}</h2>
+                            <div className="flex flex-wrap items-center gap-6 text-blue-100">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                <span>
+                                  {currentPatient.age} años • {currentPatient.gender}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>DOB: {new Date(currentPatient.dob).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                <span>{currentPatient.mrn}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {stats && (
+                        <div className="p-8 bg-gradient-to-br from-gray-50 to-blue-50">
+                          <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-lg transition-all duration-200">
+                              <div className="flex items-center gap-4">
+                                <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl">
+                                  <CheckCircle className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Registros Activos</p>
+                                  <p className="text-2xl font-bold text-gray-900">{stats.activeRecords}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-lg transition-all duration-200">
+                              <div className="flex items-center gap-4">
+                                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
+                                  <Pill className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Medicamentos</p>
+                                  <p className="text-2xl font-bold text-gray-900">{stats.medications}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-lg transition-all duration-200">
+                              <div className="flex items-center gap-4">
+                                <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl">
+                                  <Stethoscope className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Diagnósticos</p>
+                                  <p className="text-2xl font-bold text-gray-900">{stats.diagnoses}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-lg transition-all duration-200">
+                              <div className="flex items-center gap-4">
+                                <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl">
+                                  <Clock className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Última Visita</p>
+                                  <p className="text-sm font-bold text-gray-900">
+                                    {stats.lastVisit.toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl border border-gray-200 hover:shadow-lg transition-all duration-200">
+                              <div className="flex items-center gap-4">
+                                <div className="p-3 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl">
+                                  <Sparkles className="h-6 w-6 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Recientes (30d)</p>
+                                  <p className="text-2xl font-bold text-gray-900">{stats.recentRecords}</p>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={() => {
-                          setShowUploadDialog(true)
-                        }}
-                      >
-                        <FilePlus className="h-4 w-4" />
-                        <span>Upload Document</span>
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="gap-2">
-                            <Filter className="h-4 w-4" />
-                            <span>Filter</span>
-                            <ChevronDown className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel>Filter Records</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <div className="p-2">
-                            <div className="mb-2 space-y-1">
-                              <label className="text-xs font-medium">Date Range</label>
-                              <div className="grid gap-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="space-y-1">
-                                    <label className="text-xs text-slate-500">From</label>
-                                    <Input
-                                      type="date"
-                                      className="h-8"
-                                      onChange={(e) =>
-                                        setDateRange((prev) => ({ ...prev, start: e.target.value }) as any)
-                                      }
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <label className="text-xs text-slate-500">To</label>
-                                    <Input
-                                      type="date"
-                                      className="h-8"
-                                      onChange={(e) =>
-                                        setDateRange((prev) => ({ ...prev, end: e.target.value }) as any)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mb-2 space-y-1">
-                              <label className="text-xs font-medium">Status</label>
-                              <div className="grid gap-1">
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox id="status-active" />
-                                  <label htmlFor="status-active" className="text-sm">
-                                    Active
-                                  </label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox id="status-completed" />
-                                  <label htmlFor="status-completed" className="text-sm">
-                                    Completed
-                                  </label>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mb-2 space-y-1">
-                              <label className="text-xs font-medium">Provider</label>
-                              <Select>
-                                <SelectTrigger className="h-8">
-                                  <SelectValue placeholder="All Providers" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="all">All Providers</SelectItem>
-                                  <SelectItem value="dr-taylor">Dr. Rebecca Taylor</SelectItem>
-                                  <SelectItem value="dr-wilson">Dr. James Wilson</SelectItem>
-                                  <SelectItem value="labcorp">LabCorp</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="pt-2">
-                              <Button size="sm" className="w-full">
-                                Apply Filters
-                              </Button>
-                            </div>
-                          </div>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <div className="flex items-center gap-1 rounded-md border bg-white p-1">
-                        <Button
-                          variant={viewMode === "list" ? "default" : "ghost"}
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => setViewMode("list")}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="lucide lucide-list"
-                          >
-                            <line x1="8" x2="21" y1="6" y2="6" />
-                            <line x1="8" x2="21" y1="12" y2="12" />
-                            <line x1="8" x2="21" y1="18" y2="18" />
-                            <line x1="3" x2="3.01" y1="6" y2="6" />
-                            <line x1="3" x2="3.01" y1="12" y2="12" />
-                            <line x1="3" x2="3.01" y1="18" y2="18" />
-                          </svg>
-                          <span className="sr-only">List view</span>
-                        </Button>
-                        <Button
-                          variant={viewMode === "timeline" ? "default" : "ghost"}
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => setViewMode("timeline")}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="lucide lucide-gantt-chart"
-                          >
-                            <path d="M8 6h10" />
-                            <path d="M6 12h9" />
-                            <path d="M11 18h7" />
-                            <path d="M6 6v12" />
-                            <path d="M12 12v6" />
-                            <path d="M18 6v12" />
-                          </svg>
-                          <span className="sr-only">Timeline view</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Search and Category Filters */}
-            <motion.div variants={item}>
-              <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-                  <Input
-                    type="search"
-                    placeholder="Search records by title, provider, or content..."
-                    className="w-full pl-8 focus-visible:ring-blue-500"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <ScrollArea className="w-full whitespace-nowrap rounded-md border bg-white p-1 md:w-auto">
-                  <div className="flex gap-1 p-1">
-                    {recordCategories.map((category) => (
-                      <Button
-                        key={category.id}
-                        variant={selectedCategory === category.id ? "default" : "ghost"}
-                        className={`h-8 gap-2 ${selectedCategory === category.id ? "" : "hover:bg-slate-100"}`}
-                        onClick={() => setSelectedCategory(category.id)}
-                      >
-                        <category.icon className="h-4 w-4" />
-                        <span>{category.name}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            </motion.div>
-
-            {/* Records List and Details */}
-            <motion.div variants={item} className="grid gap-4 lg:grid-cols-12">
-              {/* Records List */}
-              <div className={`space-y-4 ${selectedRecord ? "lg:col-span-5" : "lg:col-span-12"}`}>
-                {viewMode === "list" ? (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle>Medical Records</CardTitle>
-                        <div className="text-sm text-slate-500">
-                          {filteredRecords.length} {filteredRecords.length === 1 ? "record" : "records"} found
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      {filteredRecords.length > 0 ? (
-                        <div className="divide-y">
-                          <AnimatePresence>
-                            {filteredRecords.map((record, index) => (
-                              <motion.div
-                                key={record.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className={`cursor-pointer p-4 transition-colors hover:bg-slate-50 ${
-                                  selectedRecord === record.id ? "bg-blue-50" : ""
-                                }`}
-                                onClick={() => setSelectedRecord(record.id)}
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div
-                                    className={`rounded-full p-2 ${getRecordTypeStyles(record.type).bgColor} ${
-                                      getRecordTypeStyles(record.type).textColor
-                                    }`}
-                                  >
-                                    {getRecordTypeIcon(record.type)}
-                                  </div>
-                                  <div className="flex-1 space-y-1">
-                                    <div className="flex items-center justify-between">
-                                      <h3 className="font-medium">{record.title}</h3>
-                                      <Badge
-                                        variant="outline"
-                                        className={`${
-                                          record.status === "active"
-                                            ? "bg-green-50 text-green-700"
-                                            : "bg-blue-50 text-blue-700"
-                                        }`}
-                                      >
-                                        {record.status === "active" ? "Active" : "Completed"}
-                                      </Badge>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                                      <div className="flex items-center gap-1">
-                                        <Calendar className="h-3.5 w-3.5" />
-                                        <span>{new Date(record.date).toLocaleDateString()}</span>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <User className="h-3.5 w-3.5" />
-                                        <span>{record.provider}</span>
-                                      </div>
-                                      {record.documents.length > 0 && (
-                                        <div className="flex items-center gap-1">
-                                          <FileText className="h-3.5 w-3.5" />
-                                          <span>
-                                            {record.documents.length} {record.documents.length === 1 ? "doc" : "docs"}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="line-clamp-2 text-sm text-slate-600">
-                                      {getRecordSummary(record)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            ))}
-                          </AnimatePresence>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                          <div className="rounded-full bg-slate-100 p-3">
-                            <Search className="h-6 w-6 text-slate-400" />
-                          </div>
-                          <h3 className="mt-4 text-lg font-medium">No records found</h3>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Try adjusting your search or filters to find what you're looking for.
-                          </p>
-                          <Button
-                            className="mt-4"
-                            onClick={() => {
-                              setSearchQuery("")
-                              setSelectedCategory("all")
-                              setDateRange(null)
-                            }}
-                          >
-                            Clear Filters
-                          </Button>
-                        </div>
-                      )}
                     </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle>Medical Timeline</CardTitle>
-                        <div className="text-sm text-slate-500">
-                          {filteredRecords.length} {filteredRecords.length === 1 ? "record" : "records"} found
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {filteredRecords.length > 0 ? (
-                        <MedicalTimelineView
-                          records={filteredRecords}
-                          selectedRecord={selectedRecord}
-                          onSelectRecord={(id) => setSelectedRecord(id)}
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                          <div className="rounded-full bg-slate-100 p-3">
-                            <Search className="h-6 w-6 text-slate-400" />
-                          </div>
-                          <h3 className="mt-4 text-lg font-medium">No records found</h3>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Try adjusting your search or filters to find what you're looking for.
-                          </p>
-                          <Button
-                            className="mt-4"
-                            onClick={() => {
-                              setSearchQuery("")
-                              setSelectedCategory("all")
-                              setDateRange(null)
-                            }}
-                          >
-                            Clear Filters
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* Record Details */}
-              {selectedRecord && recordDetails && (
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-7">
-                  <Card className="sticky top-4">
-                    <CardHeader className="flex flex-row items-start justify-between pb-3">
-                      <div>
-                        <CardTitle>{recordDetails.title}</CardTitle>
-                        <CardDescription>
-                          {new Date(recordDetails.date).toLocaleDateString()} • {recordDetails.provider}
-                        </CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedRecord(null)}>
-                          <X className="h-4 w-4" />
-                          <span className="sr-only">Close</span>
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pb-0">
-                      <Tabs defaultValue="details">
-                        <TabsList className="grid w-full grid-cols-3">
-                          <TabsTrigger value="details" className="text-xs sm:text-sm">
-                            Details
-                          </TabsTrigger>
-                          <TabsTrigger value="documents" className="text-xs sm:text-sm">
-                            Documents ({recordDetails.documents.length})
-                          </TabsTrigger>
-                          <TabsTrigger value="history" className="text-xs sm:text-sm">
-                            Audit Trail
-                          </TabsTrigger>
-                        </TabsList>
-                        <div className="mt-4">
-                          <TabsContent value="details">
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <Badge
-                                  variant="outline"
-                                  className={`${
-                                    recordDetails.status === "active"
-                                      ? "bg-green-50 text-green-700"
-                                      : "bg-blue-50 text-blue-700"
-                                  }`}
-                                >
-                                  {recordDetails.status === "active" ? "Active" : "Completed"}
-                                </Badge>
-                                <div className="flex gap-2">
-                                  <Button variant="outline" size="sm" className="h-8 gap-1">
-                                    <Printer className="h-3.5 w-3.5" />
-                                    <span className="hidden sm:inline">Print</span>
-                                  </Button>
-                                  <Button variant="outline" size="sm" className="h-8 gap-1">
-                                    <Download className="h-3.5 w-3.5" />
-                                    <span className="hidden sm:inline">Export</span>
-                                  </Button>
-                                  <Button variant="outline" size="sm" className="h-8 gap-1">
-                                    <Share2 className="h-3.5 w-3.5" />
-                                    <span className="hidden sm:inline">Share</span>
-                                  </Button>
-                                </div>
-                              </div>
-
-                              {renderRecordDetails(recordDetails)}
-                            </div>
-                          </TabsContent>
-                          <TabsContent value="documents">
-                            {recordDetails.documents.length > 0 ? (
-                              <div className="space-y-3">
-                                {recordDetails.documents.map((doc) => (
-                                  <div
-                                    key={doc.id}
-                                    className="flex items-center justify-between rounded-lg border p-3 hover:bg-slate-50"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <div
-                                        className={`rounded-full p-2 ${
-                                          doc.type === "pdf" ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"
-                                        }`}
-                                      >
-                                        {doc.type === "pdf" ? (
-                                          <FileText className="h-4 w-4" />
-                                        ) : (
-                                          <FileImage className="h-4 w-4" />
-                                        )}
-                                      </div>
-                                      <div>
-                                        <p className="font-medium">{doc.name}</p>
-                                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                                          <span>{doc.size}</span>
-                                          <span>•</span>
-                                          <span>
-                                            {new Date(doc.uploadedAt).toLocaleDateString()} at{" "}
-                                            {new Date(doc.uploadedAt).toLocaleTimeString([], {
-                                              hour: "2-digit",
-                                              minute: "2-digit",
-                                            })}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() => handleDocumentClick(doc)}
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                        <span className="sr-only">View</span>
-                                      </Button>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <Download className="h-4 w-4" />
-                                        <span className="sr-only">Download</span>
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <div className="rounded-full bg-slate-100 p-3">
-                                  <FileText className="h-6 w-6 text-slate-400" />
-                                </div>
-                                <h3 className="mt-4 text-lg font-medium">No documents</h3>
-                                <p className="mt-1 text-sm text-slate-500">
-                                  This record doesn't have any associated documents.
-                                </p>
-                                <Button
-                                  className="mt-4"
-                                  onClick={() => {
-                                    setShowUploadDialog(true)
-                                  }}
-                                >
-                                  Upload Document
-                                </Button>
-                              </div>
-                            )}
-                          </TabsContent>
-                          <TabsContent value="history">
-                            {recordAuditTrail.length > 0 ? (
-                              <div className="space-y-3">
-                                {recordAuditTrail.map((entry) => (
-                                  <div key={entry.id} className="flex items-start gap-3 rounded-lg border p-3">
-                                    <div
-                                      className={`rounded-full p-2 ${getAuditActionStyles(entry.action).bgColor} ${
-                                        getAuditActionStyles(entry.action).textColor
-                                      }`}
-                                    >
-                                      {getAuditActionIcon(entry.action)}
-                                    </div>
-                                    <div className="flex-1">
-                                      <p className="font-medium">{entry.user}</p>
-                                      <p className="text-sm text-slate-600">{entry.details}</p>
-                                      <p className="text-xs text-slate-500">
-                                        {new Date(entry.timestamp).toLocaleDateString()} at{" "}
-                                        {new Date(entry.timestamp).toLocaleTimeString([], {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <div className="rounded-full bg-slate-100 p-3">
-                                  <History className="h-6 w-6 text-slate-400" />
-                                </div>
-                                <h3 className="mt-4 text-lg font-medium">No audit trail</h3>
-                                <p className="mt-1 text-sm text-slate-500">
-                                  No activity has been recorded for this record yet.
-                                </p>
-                              </div>
-                            )}
-                          </TabsContent>
-                        </div>
-                      </Tabs>
-                    </CardContent>
-                    <CardFooter className="flex items-center justify-between border-t p-4 mt-4">
-                      <div className="flex items-center gap-1 text-xs text-slate-500">
-                        <Lock className="h-3.5 w-3.5" />
-                        <span>End-to-end encrypted</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-slate-500">
-                        <Shield className="h-3.5 w-3.5" />
-                        <span>HIPAA Compliant</span>
-                      </div>
-                    </CardFooter>
                   </Card>
                 </motion.div>
               )}
+
+              {/* Enhanced Search and Filters */}
+              <motion.div variants={itemVariants} className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <div className="flex flex-col lg:flex-row gap-6">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                    <Input
+                      type="search"
+                      placeholder="Buscar por título, proveedor o contenido..."
+                      className="pl-12 h-14 border-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500 rounded-xl text-base"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                      <SelectTrigger className="w-full lg:w-56 h-14 border-2 border-gray-200 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4" />
+                          <SelectValue />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {updatedFilterCategories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            <div className="flex items-center justify-between w-full gap-3">
+                              <div className="flex items-center gap-2">
+                                <category.icon className="h-4 w-4" />
+                                <span>{category.name}</span>
+                              </div>
+                              <Badge variant="secondary" className="text-xs">
+                                {category.count}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={sortBy} onValueChange={(value: "date" | "type" | "priority") => setSortBy(value)}>
+                      <SelectTrigger className="w-full lg:w-48 h-14 border-2 border-gray-200 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="h-4 w-4" />
+                          <SelectValue />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date">Fecha</SelectItem>
+                        <SelectItem value="type">Tipo</SelectItem>
+                        <SelectItem value="priority">Prioridad</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex border-2 border-gray-200 rounded-xl overflow-hidden">
+                      <Button
+                        variant={viewMode === "grid" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("grid")}
+                        className="h-14 px-4 rounded-none"
+                      >
+                        <div className="grid grid-cols-2 gap-1 w-4 h-4">
+                          <div className="bg-current rounded-sm"></div>
+                          <div className="bg-current rounded-sm"></div>
+                          <div className="bg-current rounded-sm"></div>
+                          <div className="bg-current rounded-sm"></div>
+                        </div>
+                      </Button>
+                      <Button
+                        variant={viewMode === "list" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("list")}
+                        className="h-14 px-4 rounded-none"
+                      >
+                        <div className="space-y-1 w-4 h-4">
+                          <div className="bg-current h-1 rounded-sm"></div>
+                          <div className="bg-current h-1 rounded-sm"></div>
+                          <div className="bg-current h-1 rounded-sm"></div>
+                        </div>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Enhanced Records Display */}
+              <motion.div variants={itemVariants}>
+                {currentRecords.length > 0 ? (
+                  <div
+                    className={
+                      viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"
+                    }
+                  >
+                    <AnimatePresence>
+                      {currentRecords.map((record, index) => {
+                        const typeConfig = getRecordTypeConfig(record.type)
+                        const Icon = typeConfig.icon
+                        const isSelected = selectedRecord === record.id
+
+                        return (
+                          <motion.div
+                            key={record.id}
+                            variants={cardVariants}
+                            initial="hidden"
+                            animate="visible"
+                            whileHover="hover"
+                            transition={{ delay: index * 0.05 }}
+                            layout
+                          >
+                            <Card
+                              className={`cursor-pointer transition-all duration-300 border-2 hover:shadow-xl ${
+                                isSelected
+                                  ? "ring-4 ring-blue-500/20 border-blue-500 shadow-xl"
+                                  : "border-gray-200 hover:border-blue-300"
+                              } ${viewMode === "list" ? "flex items-center" : ""}`}
+                              onClick={() => setSelectedRecord(record.id)}
+                            >
+                              {viewMode === "grid" ? (
+                                <>
+                                  <CardHeader className="pb-4">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex items-center gap-4">
+                                        <div className={`p-3 rounded-2xl ${typeConfig.color} shadow-lg`}>
+                                          <Icon className="h-6 w-6 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                          <CardTitle className="text-lg leading-tight mb-2">{record.title}</CardTitle>
+                                          <div className="flex items-center gap-3 text-sm text-gray-500">
+                                            <div className="flex items-center gap-1">
+                                              <Calendar className="h-3 w-3" />
+                                              {new Date(record.date).toLocaleDateString()}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <MapPin className="h-3 w-3" />
+                                              {record.provider}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <Badge className={`${getStatusColor(record.status)} flex items-center gap-1`}>
+                                        {getStatusIcon(record.status)}
+                                        {record.status}
+                                      </Badge>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent className="pt-0">
+                                    <p className="text-gray-600 text-sm line-clamp-3 mb-4 leading-relaxed">
+                                      {getRecordSummary(record)}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                      <Badge
+                                        variant="outline"
+                                        className={`${typeConfig.textColor} ${typeConfig.borderColor} font-medium`}
+                                      >
+                                        {typeConfig.name}
+                                      </Badge>
+                                      <div className="flex items-center gap-2">
+                                        {typeConfig.priority === "high" && (
+                                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                        )}
+                                        <ChevronRight className="h-5 w-5 text-gray-400" />
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </>
+                              ) : (
+                                <CardContent className="p-6 flex items-center gap-6 w-full">
+                                  <div className={`p-3 rounded-2xl ${typeConfig.color} shadow-lg flex-shrink-0`}>
+                                    <Icon className="h-6 w-6 text-white" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h3 className="text-lg font-semibold truncate">{record.title}</h3>
+                                      <Badge
+                                        className={`${getStatusColor(record.status)} flex items-center gap-1 ml-4`}
+                                      >
+                                        {getStatusIcon(record.status)}
+                                        {record.status}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                                      <div className="flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        {new Date(record.date).toLocaleDateString()}
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        {record.provider}
+                                      </div>
+                                      <Badge
+                                        variant="outline"
+                                        className={`${typeConfig.textColor} ${typeConfig.borderColor}`}
+                                      >
+                                        {typeConfig.name}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-gray-600 text-sm line-clamp-2">{getRecordSummary(record)}</p>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {typeConfig.priority === "high" && (
+                                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                    )}
+                                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                                  </div>
+                                </CardContent>
+                              )}
+                            </Card>
+                          </motion.div>
+                        )
+                      })}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <motion.div variants={itemVariants} className="text-center py-16">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2, type: "spring" }}
+                      className="mx-auto w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6"
+                    >
+                      <FileSearch className="h-12 w-12 text-blue-500" />
+                    </motion.div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">No se encontraron registros</h3>
+                    <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                      {searchQuery || selectedCategory !== "all"
+                        ? "Intenta ajustar tus filtros de búsqueda para encontrar los registros que buscas"
+                        : isPatient()
+                          ? "Aún no tienes registros médicos. Se crearán automáticamente después de tus consultas médicas."
+                          : "Este paciente aún no tiene registros médicos en el sistema"}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setSearchQuery("")
+                        setSelectedCategory("all")
+                      }}
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                    >
+                      <Filter className="h-4 w-4 mr-2" />
+                      Limpiar Filtros
+                    </Button>
+                  </motion.div>
+                )}
+              </motion.div>
+
+              {/* Enhanced Pagination */}
+              <RoleGuard allowedRoles={[UserRole.PHYSICIAN, UserRole.OWNER, UserRole.RECEPTIONIST]}>
+                {clinicData?.pagination && clinicData.pagination.totalPages > 1 && (
+                  <motion.div
+                    variants={itemVariants}
+                    className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600 flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        <span>
+                          Página {clinicData.pagination.currentPage} de {clinicData.pagination.totalPages}(
+                          {clinicData.pagination.totalRecords} registros totales)
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(currentPage - 1)}
+                          disabled={!clinicData.pagination.hasPrevious}
+                          className="h-10 px-4 rounded-xl border-2"
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1" />
+                          Anterior
+                        </Button>
+
+                        <div className="flex gap-1">
+                          {Array.from({ length: Math.min(5, clinicData.pagination.totalPages) }, (_, i) => {
+                            const pageNum = Math.max(1, currentPage - 2) + i
+                            if (pageNum > clinicData.pagination.totalPages) return null
+
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={currentPage === pageNum ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(pageNum)}
+                                className="w-10 h-10 rounded-xl border-2"
+                              >
+                                {pageNum}
+                              </Button>
+                            )
+                          })}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(currentPage + 1)}
+                          disabled={!clinicData.pagination.hasNext}
+                          className="h-10 px-4 rounded-xl border-2"
+                        >
+                          Siguiente
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </RoleGuard>
+
+              {/* Enhanced Record Details Modal */}
+              {selectedRecord && selectedRecordDetails && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+                  onClick={() => setSelectedRecord(null)}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Enhanced Modal Header */}
+                    <div className="p-8 border-b bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white relative overflow-hidden">
+                      <div className="absolute inset-0 bg-black/10"></div>
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+
+                      <div className="relative z-10 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`p-4 rounded-2xl ${getRecordTypeConfig(selectedRecordDetails.type).color} shadow-lg`}
+                          >
+                            {(() => {
+                              const Icon = getRecordTypeConfig(selectedRecordDetails.type).icon
+                              return <Icon className="h-8 w-8 text-white" />
+                            })()}
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-bold mb-1">{selectedRecordDetails.title}</h3>
+                            <div className="flex items-center gap-4 text-blue-100">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                {new Date(selectedRecordDetails.date).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-4 w-4" />
+                                {selectedRecordDetails.provider}
+                              </div>
+                              <Badge
+                                className={`${getStatusColor(selectedRecordDetails.status)} flex items-center gap-1`}
+                              >
+                                {getStatusIcon(selectedRecordDetails.status)}
+                                {selectedRecordDetails.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setSelectedRecord(null)}
+                          className="text-white hover:bg-white/20 rounded-xl h-12 w-12"
+                        >
+                          <X className="h-6 w-6" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Enhanced Modal Content */}
+                    <div className="p-8 overflow-y-auto max-h-[calc(90vh-300px)]">
+                      <Tabs defaultValue="details" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 mb-8">
+                          <TabsTrigger value="details" className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Detalles
+                          </TabsTrigger>
+                          <TabsTrigger value="timeline" className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Cronología
+                          </TabsTrigger>
+                          <TabsTrigger value="actions" className="flex items-center gap-2">
+                            <Zap className="h-4 w-4" />
+                            Acciones
+                          </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="details" className="space-y-6">
+                          {/* Enhanced content sections with better visual hierarchy */}
+                          {selectedRecordDetails.content.description && (
+                            <div className="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-2xl border border-gray-200">
+                              <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-lg">
+                                <FileText className="h-5 w-5 text-blue-600" />
+                                Descripción General
+                              </h4>
+                              <p className="text-gray-700 leading-relaxed">
+                                {selectedRecordDetails.content.description}
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedRecordDetails.content.consult_reason && (
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-200">
+                              <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2 text-lg">
+                                <Info className="h-5 w-5" />
+                                Motivo de Consulta
+                              </h4>
+                              <p className="text-blue-800 leading-relaxed">
+                                {selectedRecordDetails.content.consult_reason}
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedRecordDetails.content.diagnosis && (
+                            <div className="bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-2xl border border-red-200">
+                              <h4 className="font-bold text-red-900 mb-3 flex items-center gap-2 text-lg">
+                                <Stethoscope className="h-5 w-5" />
+                                Diagnóstico
+                              </h4>
+                              <p className="text-red-800 leading-relaxed">{selectedRecordDetails.content.diagnosis}</p>
+                            </div>
+                          )}
+
+                          {selectedRecordDetails.content.symptoms && (
+                            <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-2xl border border-amber-200">
+                              <h4 className="font-bold text-amber-900 mb-3 flex items-center gap-2 text-lg">
+                                <AlertCircle className="h-5 w-5" />
+                                Síntomas
+                              </h4>
+                              <p className="text-amber-800 leading-relaxed">{selectedRecordDetails.content.symptoms}</p>
+                            </div>
+                          )}
+
+                          {selectedRecordDetails.content.treatment && (
+                            <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-6 rounded-2xl border border-emerald-200">
+                              <h4 className="font-bold text-emerald-900 mb-3 flex items-center gap-2 text-lg">
+                                <Clipboard className="h-5 w-5" />
+                                Plan de Tratamiento
+                              </h4>
+                              <p className="text-emerald-800 leading-relaxed">
+                                {selectedRecordDetails.content.treatment}
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedRecordDetails.content.medications &&
+                            selectedRecordDetails.content.medications.length > 0 && (
+                              <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-6 rounded-2xl border border-emerald-200">
+                                <h4 className="font-bold text-emerald-900 mb-4 flex items-center gap-2 text-lg">
+                                  <Pill className="h-5 w-5" />
+                                  Medicamentos Prescritos ({selectedRecordDetails.content.medications.length})
+                                </h4>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                  {selectedRecordDetails.content.medications.map((med, index) => (
+                                    <div
+                                      key={index}
+                                      className="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm"
+                                    >
+                                      <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2 bg-emerald-500 rounded-lg">
+                                          <Pill className="h-4 w-4 text-white" />
+                                        </div>
+                                        <div>
+                                          <span className="font-bold text-emerald-900 text-lg">{med.name}</span>
+                                          <Badge variant="outline" className="bg-emerald-100 text-emerald-700 ml-2">
+                                            {med.dosage}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-2 text-sm text-emerald-700">
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div>
+                                            <span className="font-medium">Frecuencia:</span>
+                                            <p>{med.frequency}</p>
+                                          </div>
+                                          <div>
+                                            <span className="font-medium">Duración:</span>
+                                            <p>{med.duration}</p>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <span className="font-medium">Prescrito por:</span>
+                                          <p>{med.prescriber}</p>
+                                        </div>
+                                        {med.instructions && (
+                                          <div>
+                                            <span className="font-medium">Instrucciones:</span>
+                                            <p className="italic">{med.instructions}</p>
+                                          </div>
+                                        )}
+                                        <div>
+                                          <span className="font-medium">Fecha de inicio:</span>
+                                          <p>{new Date(med.startDate).toLocaleDateString()}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                          {selectedRecordDetails.content.allergies && (
+                            <div className="bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-2xl border border-red-200">
+                              <h4 className="font-bold text-red-900 mb-3 flex items-center gap-2 text-lg">
+                                <AlertTriangle className="h-5 w-5" />
+                                Alergias Conocidas
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                                <p className="text-red-800 font-medium">{selectedRecordDetails.content.allergies}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="grid md:grid-cols-2 gap-6">
+                            {selectedRecordDetails.content.family_info && (
+                              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-2xl border border-purple-200">
+                                <h4 className="font-bold text-purple-900 mb-3 flex items-center gap-2">
+                                  <Users className="h-5 w-5" />
+                                  Antecedentes Familiares
+                                </h4>
+                                <p className="text-purple-800 leading-relaxed">
+                                  {selectedRecordDetails.content.family_info}
+                                </p>
+                              </div>
+                            )}
+
+                            {selectedRecordDetails.content.personal_info && (
+                              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-2xl border border-blue-200">
+                                <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                                  <User className="h-5 w-5" />
+                                  Información Personal
+                                </h4>
+                                <p className="text-blue-800 leading-relaxed">
+                                  {selectedRecordDetails.content.personal_info}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {(selectedRecordDetails.content.observations || selectedRecordDetails.content.notes) && (
+                            <div className="grid md:grid-cols-2 gap-6">
+                              {selectedRecordDetails.content.observations && (
+                                <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-6 rounded-2xl border border-gray-200">
+                                  <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                    <Eye className="h-5 w-5" />
+                                    Observaciones Clínicas
+                                  </h4>
+                                  <p className="text-gray-700 leading-relaxed">
+                                    {selectedRecordDetails.content.observations}
+                                  </p>
+                                </div>
+                              )}
+
+                              {selectedRecordDetails.content.notes && (
+                                <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-6 rounded-2xl border border-gray-200">
+                                  <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                    <Bookmark className="h-5 w-5" />
+                                    Notas Adicionales
+                                  </h4>
+                                  <p className="text-gray-700 leading-relaxed">{selectedRecordDetails.content.notes}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </TabsContent>
+
+                        <TabsContent value="timeline" className="space-y-6">
+                          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-200">
+                            <h4 className="font-bold text-blue-900 mb-4 flex items-center gap-2 text-lg">
+                              <Clock className="h-5 w-5" />
+                              Cronología del Registro
+                            </h4>
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-blue-200">
+                                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <div>
+                                  <p className="font-medium text-blue-900">Registro Creado</p>
+                                  <p className="text-sm text-blue-700">
+                                    {new Date(selectedRecordDetails.date).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-green-200">
+                                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                <div>
+                                  <p className="font-medium text-green-900">Estado Actual</p>
+                                  <p className="text-sm text-green-700 capitalize">{selectedRecordDetails.status}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="actions" className="space-y-6">
+                          <div className="grid md:grid-cols-1 gap-6">
+                            <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-6 rounded-2xl border border-emerald-200">
+                              <h4 className="font-bold text-emerald-900 mb-4 flex items-center gap-2">
+                                <Download className="h-5 w-5" />
+                                Exportar Registro
+                              </h4>
+                              <div className="space-y-3">
+                                <Button className="w-full justify-start gap-2" variant="outline">
+                                  <Download className="h-4 w-4" />
+                                  Descargar PDF
+                                </Button>
+                                <Button className="w-full justify-start gap-2" variant="outline">
+                                  <Printer className="h-4 w-4" />
+                                  Imprimir Registro
+                                </Button>
+                              </div>
+                            </div>
+
+                            
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+
+                    {/* Enhanced Modal Footer */}
+                    <div className="p-6 border-t bg-gradient-to-r from-gray-50 to-blue-50 flex items-center justify-between">
+                      <div className="flex items-center gap-6 text-sm text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-blue-600" />
+                          <span className="text-blue-700 font-medium">Altheia EHR</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-purple-600" />
+                          <span className="text-purple-700 font-medium">Verificado</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
             </motion.div>
-          </motion.div>
+          )}
         </main>
       </div>
-
-      {/* Document Upload Dialog */}
-      <DocumentUploader open={showUploadDialog} onOpenChange={setShowUploadDialog} patientId={selectedPatient} />
-
-      {/* Document Viewer Dialog */}
-      <DocumentViewer
-        open={showDocumentViewer}
-        onOpenChange={setShowDocumentViewer}
-        document={selectedDocument}
-        patientName={patientDetails?.name}
-      />
-
-      {/* Image Viewer Dialog */}
-      <ImageViewer
-        open={showImageViewer}
-        onOpenChange={setShowImageViewer}
-        imageUrl={selectedImage}
-        title={selectedDocument?.name}
-      />
     </div>
   )
-}
-
-// Helper functions
-function getRecordTypeIcon(type: string) {
-  switch (type) {
-    case "diagnoses":
-      return <Stethoscope className="h-4 w-4" />
-    case "treatments":
-      return <Clipboard className="h-4 w-4" />
-    case "lab":
-      return <Microscope className="h-4 w-4" />
-    case "imaging":
-      return <FileImage className="h-4 w-4" />
-    case "medications":
-      return <Pill className="h-4 w-4" />
-    case "vitals":
-      return <Activity className="h-4 w-4" />
-    case "procedures":
-      return <Zap className="h-4 w-4" />
-    default:
-      return <FileText className="h-4 w-4" />
-  }
-}
-
-function getRecordTypeStyles(type: string) {
-  switch (type) {
-    case "diagnoses":
-      return { bgColor: "bg-purple-100", textColor: "text-purple-600" }
-    case "treatments":
-      return { bgColor: "bg-blue-100", textColor: "text-blue-600" }
-    case "lab":
-      return { bgColor: "bg-green-100", textColor: "text-green-600" }
-    case "imaging":
-      return { bgColor: "bg-amber-100", textColor: "text-amber-600" }
-    case "medications":
-      return { bgColor: "bg-red-100", textColor: "text-red-600" }
-    case "vitals":
-      return { bgColor: "bg-cyan-100", textColor: "text-cyan-600" }
-    case "procedures":
-      return { bgColor: "bg-indigo-100", textColor: "text-indigo-600" }
-    default:
-      return { bgColor: "bg-slate-100", textColor: "text-slate-600" }
-  }
-}
-
-function getAuditActionIcon(action: string) {
-  switch (action) {
-    case "view":
-      return <Eye className="h-4 w-4" />
-    case "edit":
-      return <FileText className="h-4 w-4" />
-    case "create":
-      return <FilePlus className="h-4 w-4" />
-    case "upload":
-      return <FileImage className="h-4 w-4" />
-    default:
-      return <History className="h-4 w-4" />
-  }
-}
-
-function getAuditActionStyles(action: string) {
-  switch (action) {
-    case "view":
-      return { bgColor: "bg-blue-100", textColor: "text-blue-600" }
-    case "edit":
-      return { bgColor: "bg-amber-100", textColor: "text-amber-600" }
-    case "create":
-      return { bgColor: "bg-green-100", textColor: "text-green-600" }
-    case "upload":
-      return { bgColor: "bg-purple-100", textColor: "text-purple-600" }
-    default:
-      return { bgColor: "bg-slate-100", textColor: "text-slate-600" }
-  }
-}
-
-function getRecordSummary(record: any) {
-  switch (record.type) {
-    case "diagnoses":
-      return record.content.diagnosis
-    case "treatments":
-      return `Includes ${record.content.medications?.length || 0} medication(s) and ${
-        record.content.lifestyle?.length || 0
-      } lifestyle recommendation(s)`
-    case "lab":
-      return record.content.summary
-    case "imaging":
-      return record.content.impression
-    case "medications":
-      return `${record.content.medications?.length || 0} active medication(s)`
-    case "vitals":
-      return record.content.notes
-    case "procedures":
-      return record.content.findings
-    default:
-      return ""
-  }
-}
-
-function renderRecordDetails(record: any) {
-  switch (record.type) {
-    case "diagnoses":
-      return (
-        <div className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-2 font-medium">Diagnosis</h3>
-            <div className="grid gap-2 md:grid-cols-2">
-              <div>
-                <p className="text-sm font-medium text-slate-500">Condition</p>
-                <p>{record.content.diagnosis}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">ICD Code</p>
-                <p>{record.content.icdCode}</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm font-medium text-slate-500">Clinical Notes</p>
-              <p className="text-sm">{record.content.notes}</p>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm font-medium text-slate-500">Follow-up</p>
-              <p>{record.content.followUp}</p>
-            </div>
-          </div>
-        </div>
-      )
-    case "lab":
-      return (
-        <div className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-2 font-medium">Lab Results</h3>
-            <div className="mb-4">
-              <p className="text-sm font-medium text-slate-500">Summary</p>
-              <p className="text-sm">{record.content.summary}</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="pb-2 font-medium">Test</th>
-                    <th className="pb-2 font-medium">Result</th>
-                    <th className="pb-2 font-medium">Reference Range</th>
-                    <th className="pb-2 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {record.content.results.map((result: any, index: number) => (
-                    <tr key={index}>
-                      <td className="py-2">{result.name}</td>
-                      <td className="py-2">
-                        {result.value} {result.unit}
-                      </td>
-                      <td className="py-2">{result.range}</td>
-                      <td className="py-2">
-                        <Badge
-                          variant="outline"
-                          className={
-                            result.status === "normal"
-                              ? "bg-green-50 text-green-700"
-                              : result.status === "high"
-                                ? "bg-red-50 text-red-700"
-                                : "bg-amber-50 text-amber-700"
-                          }
-                        >
-                          {result.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-4 font-medium">Results Visualization</h3>
-            <LabResultsChart results={record.content.results} />
-          </div>
-        </div>
-      )
-    case "imaging":
-      return (
-        <div className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-2 font-medium">Imaging Study</h3>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Procedure</p>
-              <p>{record.content.procedure}</p>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm font-medium text-slate-500">Findings</p>
-              <p className="text-sm">{record.content.findings}</p>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm font-medium text-slate-500">Impression</p>
-              <p className="text-sm">{record.content.impression}</p>
-            </div>
-          </div>
-          {record.documents.some((doc: any) => doc.type === "image") && (
-            <div className="rounded-lg border p-4">
-              <h3 className="mb-4 font-medium">Images</h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                {record.documents
-                  .filter((doc: any) => doc.type === "image")
-                  .map((doc: any) => (
-                    <div
-                      key={doc.id}
-                      className="overflow-hidden rounded-lg border cursor-pointer"
-                      onClick={() => {
-                        // This would be handled by the parent component
-                      }}
-                    >
-                      <img
-                        src={doc.url || "/placeholder.svg"}
-                        alt={doc.name}
-                        className="h-48 w-full object-cover transition-transform hover:scale-105"
-                      />
-                      <div className="p-2">
-                        <p className="text-sm font-medium">{doc.name}</p>
-                        <p className="text-xs text-slate-500">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )
-    case "treatments":
-      return (
-        <div className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-2 font-medium">Treatment Plan</h3>
-            {record.content.medications && record.content.medications.length > 0 && (
-              <div className="mb-4">
-                <p className="text-sm font-medium text-slate-500">Medications</p>
-                <div className="mt-2 space-y-2">
-                  {record.content.medications.map((medication: any, index: number) => (
-                    <div key={index} className="rounded-lg border p-3">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">{medication.name}</p>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          {medication.dosage}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-slate-500">
-                        {medication.frequency} • {medication.duration || "Ongoing"}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {record.content.lifestyle && record.content.lifestyle.length > 0 && (
-              <div className="mb-4">
-                <p className="text-sm font-medium text-slate-500">Lifestyle Recommendations</p>
-                <ul className="mt-2 space-y-1 text-sm">
-                  {record.content.lifestyle.map((item: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <CheckCircle className="mt-0.5 h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {record.content.monitoring && (
-              <div className="mb-4">
-                <p className="text-sm font-medium text-slate-500">Monitoring</p>
-                <p className="text-sm">{record.content.monitoring}</p>
-              </div>
-            )}
-            {record.content.followUp && (
-              <div>
-                <p className="text-sm font-medium text-slate-500">Follow-up</p>
-                <p className="text-sm">{record.content.followUp}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )
-    case "medications":
-      return (
-        <div className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-2 font-medium">Current Medications</h3>
-            <div className="space-y-3">
-              {record.content.medications.map((medication: any, index: number) => (
-                <div key={index} className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{medication.name}</p>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                      {medication.dosage}
-                    </Badge>
-                  </div>
-                  <div className="mt-1 space-y-1 text-sm text-slate-500">
-                    <p>Frequency: {medication.frequency}</p>
-                    <p>
-                      Started: {new Date(medication.startDate).toLocaleDateString()}
-                      {medication.endDate && ` • Ended: ${new Date(medication.endDate).toLocaleDateString()}`}
-                    </p>
-                    <p>Prescriber: {medication.prescriber}</p>
-                    <p>
-                      Pharmacy: {medication.pharmacy}
-                      {medication.refills !== null && ` • Refills: ${medication.refills}`}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {record.content.allergies && record.content.allergies.length > 0 && (
-            <div className="rounded-lg border p-4">
-              <h3 className="mb-2 font-medium">Allergies</h3>
-              <div className="space-y-2">
-                {record.content.allergies.map((allergy: string, index: number) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-red-500" />
-                    <span>{allergy}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )
-    case "vitals":
-      return (
-        <div className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-2 font-medium">Vital Signs</h3>
-            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-              {record.content.readings.map((reading: any, index: number) => (
-                <div key={index} className="rounded-lg border p-3">
-                  <p className="text-sm text-slate-500">{reading.name}</p>
-                  <p className="text-xl font-medium">
-                    {reading.value} <span className="text-sm font-normal text-slate-500">{reading.unit}</span>
-                  </p>
-                </div>
-              ))}
-            </div>
-            {record.content.notes && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-slate-500">Notes</p>
-                <p className="text-sm">{record.content.notes}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )
-    case "procedures":
-      return (
-        <div className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-2 font-medium">Procedure Details</h3>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Procedure</p>
-              <p>{record.content.procedure}</p>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm font-medium text-slate-500">Findings</p>
-              <p className="text-sm">{record.content.findings}</p>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm font-medium text-slate-500">Interpretation</p>
-              <p className="text-sm">{record.content.interpretation}</p>
-            </div>
-          </div>
-        </div>
-      )
-    default:
-      return <div>No details available</div>
-  }
 }

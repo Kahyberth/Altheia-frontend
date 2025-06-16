@@ -41,7 +41,7 @@ export default function ReceptionistDashboardPage() {
 
   const quickActions = [
     {
-      title: "Nueva Cita",
+      title: "Agendar Cita",
       icon: Calendar,
       color: "bg-blue-50 text-blue-600",
       href: "/dashboard/appointments",
@@ -55,19 +55,12 @@ export default function ReceptionistDashboardPage() {
       description: "Añadir nuevo paciente"
     },
     {
-      title: "Historiales Clínicos",
+      title: "Historiales Médicos",
       icon: FileText,
       color: "bg-purple-50 text-purple-600", 
-      href: "/dashboard/patient-history",
+      href: "/dashboard/medical-records",
       description: "Ver historiales clínicos"
-    },
-    {
-      title: "Órdenes de Laboratorio",
-      icon: ClipboardCheck,
-      color: "bg-amber-50 text-amber-600",
-      href: "/dashboard/lab-results", 
-      description: "Gestionar órdenes de laboratorio"
-    },
+    }
   ];
 
   useEffect(() => {
@@ -209,28 +202,7 @@ export default function ReceptionistDashboardPage() {
                 <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
                   Resumen del Día
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                        <CalendarCheck className="h-5 w-5 text-blue-600" />
-                        Citas de Hoy
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold text-blue-600 mb-2">
-                        12
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          8 confirmadas
-                        </Badge>
-                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                          4 pendientes
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
+                <div className="grid grid-cols-1 gap-4">
 
                   <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
                     <CardHeader className="pb-3">
@@ -243,28 +215,9 @@ export default function ReceptionistDashboardPage() {
                       <div className="text-3xl font-bold text-green-600 mb-2">
                         3
                       </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Nuevos registros hoy
-                      </p>
                     </CardContent>
                   </Card>
-
-                  <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-purple-600" />
-                        Tiempo Promedio de Espera
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold text-purple-600 mb-2">
-                        15 min
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Tiempo promedio actual
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0"></Card>
                 </div>
               </motion.div>
 
@@ -290,14 +243,6 @@ export default function ReceptionistDashboardPage() {
                         <Users className="h-4 w-4" />
                         Ver Todos los Pacientes
                       </Button>
-                      <Button
-                        onClick={() => router.push("/dashboard/patients")}
-                        variant="outline"
-                        className="w-full gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Registrar Nuevo Paciente
-                      </Button>
                     </CardContent>
                   </Card>
 
@@ -319,14 +264,6 @@ export default function ReceptionistDashboardPage() {
                       >
                         <Calendar className="h-4 w-4" />
                         Ver Todas las Citas
-                      </Button>
-                      <Button
-                        onClick={() => router.push("/dashboard/appointments")}
-                        variant="outline"
-                        className="w-full gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Agendar Nueva Cita
                       </Button>
                     </CardContent>
                   </Card>

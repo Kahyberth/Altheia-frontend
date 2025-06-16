@@ -45,12 +45,64 @@ import {
 } from "@/components/ui/collapsible";
 import { useRole } from "@/hooks/useRole";
 import { getMedicalHistoryByPatientId } from "@/services/medical.service";
-import { Data } from "@/types/medical";
+import { MedicalHistoryResponse, MedicalRecord, PatientMedicalInfo } from "@/services/medical-history.service";
 
 interface ClinicalHistoryViewerProps {
   patientId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+interface ProcessedMedicalData {
+  patient_id: string;
+  patient_name: string;
+  consult_reason: string;
+  personal_info: string;
+  family_info: string;
+  allergies: string;
+  observations: string;
+  last_update: string;
+  created_at: string;
+  consultations: ProcessedConsultation[];
+  total_consultations: number;
+}
+
+interface ProcessedConsultation {
+  id: string;
+  date: string;
+  provider: string;
+  type: string;
+  symptoms: string;
+  diagnosis: string;
+  treatment: string;
+  notes: string;
+  medications: Array<{
+    id: string;
+    medicine: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
+    instructions: string;
+  }>;
+  physician_info: {
+    name: string;
+    physician_specialty: string;
+    email: string;
+    phone: string;
+  };
+  metadata: {
+    consult_date: string;
+    created_at: string;
+    updated_at: string;
+  };
+  prescriptions: Array<{
+    id: string;
+    medicine: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
+    instructions: string;
+  }>;
 }
 
 export function ClinicalHistoryViewerPatient({
@@ -62,7 +114,8 @@ export function ClinicalHistoryViewerPatient({
     []
   );
   const [showPDFPreview, setShowPDFPreview] = useState(false);
-  const [data, setData] = useState<Data | null>(null);
+  const [data, setData] = useState<ProcessedMedicalData | null>(null);
+  const [patient, setPatient] = useState<PatientMedicalInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -73,6 +126,89 @@ export function ClinicalHistoryViewerPatient({
       loadMedicalHistory();
     }
   }, [open, patientId, user?.id]);
+
+  const processApiResponse = (response: MedicalHistoryResponse): ProcessedMedicalData => {
+    const patient = response.data.patients[0];
+    const medicalRecords = response.data.medicalRecords;
+    
+    // Group medical records by date and provider to create consultations
+    const consultationGroups = new Map<string, ProcessedConsultation>();
+    
+    // Get historical info from the first history record
+    const historyRecord = medicalRecords.find(record => record.type === 'diagnoses' && record.title.includes('Historia Clínica'));
+    
+    medicalRecords.forEach(record => {
+      const groupKey = `${record.date}-${record.provider}`;
+      
+      if (!consultationGroups.has(groupKey)) {
+        const diagnosisRecord = medicalRecords.find(r => 
+          r.date === record.date && 
+          r.provider === record.provider && 
+          r.type === 'diagnoses' && 
+          r.title.includes('Consulta Médica')
+        );
+        
+        consultationGroups.set(groupKey, {
+          id: record.id,
+          date: record.date,
+          provider: record.provider,
+          type: record.type,
+          symptoms: diagnosisRecord?.content?.symptoms || '',
+          diagnosis: diagnosisRecord?.content?.diagnosis || '',
+          treatment: diagnosisRecord?.content?.treatment || '',
+          notes: diagnosisRecord?.content?.notes || '',
+          medications: [],
+          physician_info: {
+            name: record.provider,
+            physician_specialty: 'Medicina General',
+            email: '',
+            phone: ''
+          },
+          metadata: {
+            consult_date: record.date,
+            created_at: record.date,
+            updated_at: record.date
+          },
+          prescriptions: []
+        });
+      }
+      
+      const consultation = consultationGroups.get(groupKey)!;
+      
+      if (record.type === 'medications' && record.content.medications) {
+        record.content.medications.forEach(med => {
+          const prescription = {
+            id: `${record.id}-${med.name}`,
+            medicine: med.name,
+            dosage: med.dosage,
+            frequency: med.frequency,
+            duration: med.duration,
+            instructions: med.instructions
+          };
+          consultation.medications.push(prescription);
+          consultation.prescriptions.push(prescription);
+        });
+      }
+    });
+    
+    const consultations = Array.from(consultationGroups.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    return {
+      patient_id: patient.id,
+      patient_name: patient.name,
+      consult_reason: historyRecord?.content?.consult_reason || 'Consulta médica general',
+      personal_info: historyRecord?.content?.personal_info || 'Información no disponible',
+      family_info: historyRecord?.content?.family_info || 'Información no disponible',
+      allergies: historyRecord?.content?.allergies || 'No especificadas',
+      observations: historyRecord?.content?.observations || 'Sin observaciones',
+      last_update: response.data.metadata.lastUpdated,
+      created_at: consultations[consultations.length - 1]?.date || response.data.metadata.lastUpdated,
+      consultations,
+      total_consultations: consultations.length
+    };
+  };
 
   const loadMedicalHistory = async () => {
     const targetPatientId = patientId || user?.id;
@@ -92,14 +228,11 @@ export function ClinicalHistoryViewerPatient({
       console.log("API Response:", response);
 
       if (response.success && response.data) {
-        const processedData = {
-          ...response.data,
-          total_consultations:
-            response.data.consultations?.length ||
-            response.data.total_consultations ||
-            0,
-        };
+        const processedData = processApiResponse(response);
         setData(processedData);
+        if (response.data.patients && response.data.patients.length > 0) {
+          setPatient(response.data.patients[0]);
+        }
       } else {
         setError("No se encontró historial médico para este paciente");
       }
@@ -634,7 +767,7 @@ export function ClinicalHistoryViewerPatient({
         );
         yPosition += 15;
 
-        data.consultations.forEach((consultation, index) => {
+                  data.consultations.forEach((consultation, index) => {
           const consultationNumber = data.total_consultations - index;
 
           checkNewPage(100);
@@ -657,9 +790,7 @@ export function ClinicalHistoryViewerPatient({
             }
           );
 
-          const consultDate = new Date(
-            consultation.metadata.consult_date
-          ).toLocaleDateString("es-ES", {
+          const consultDate = new Date(consultation.date).toLocaleDateString("es-ES", {
             year: "numeric",
             month: "long",
             day: "numeric",
@@ -683,8 +814,8 @@ export function ClinicalHistoryViewerPatient({
               "Especialidad Médica",
               consultation.physician_info.physician_specialty,
             ],
-            ["Correo Electrónico", consultation.physician_info.email],
-            ["Teléfono de Contacto", consultation.physician_info.phone],
+            ["Correo Electrónico", consultation.physician_info.email || "No disponible"],
+            ["Teléfono de Contacto", consultation.physician_info.phone || "No disponible"],
           ];
 
           yPosition = addProfessionalTable(
@@ -701,10 +832,10 @@ export function ClinicalHistoryViewerPatient({
 
           const clinicalHeaders = ["Aspecto Clínico", "Descripción Detallada"];
           const clinicalRows = [
-            ["Síntomas Presentados", consultation.symptoms],
-            ["Diagnóstico Médico", consultation.diagnosis],
-            ["Tratamiento Prescrito", consultation.treatment],
-            ["Notas Clínicas Adicionales", consultation.notes],
+            ["Síntomas Presentados", consultation.symptoms || "No especificados"],
+            ["Diagnóstico Médico", consultation.diagnosis || "No especificado"],
+            ["Tratamiento Prescrito", consultation.treatment || "No especificado"],
+            ["Notas Clínicas Adicionales", consultation.notes || "Sin notas"],
           ];
 
           yPosition = addProfessionalTable(
@@ -764,7 +895,7 @@ export function ClinicalHistoryViewerPatient({
               }
             );
 
-            consultation.prescriptions.forEach((prescription, pIndex) => {
+            consultation.prescriptions.forEach((prescription) => {
               if (
                 prescription.instructions &&
                 prescription.instructions.trim()
@@ -813,8 +944,8 @@ export function ClinicalHistoryViewerPatient({
   };
 
   const getSpecialtyIcon = (specialty: string) => {
-    if (specialty.includes("Cardiología")) return <Heart className="h-4 w-4" />;
-    if (specialty.includes("Endocrinología"))
+    if (specialty?.includes("Cardiología")) return <Heart className="h-4 w-4" />;
+    if (specialty?.includes("Endocrinología"))
       return <Activity className="h-4 w-4" />;
     return <Stethoscope className="h-4 w-4" />;
   };
@@ -1085,17 +1216,26 @@ export function ClinicalHistoryViewerPatient({
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="space-y-2">
-                        {data.allergies.split(",").map((allergy, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 p-2 sm:p-3 bg-red-50 rounded-lg border border-red-200"
-                          >
-                            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 flex-shrink-0" />
-                            <span className="text-xs sm:text-sm font-medium text-red-800 min-w-0 flex-1">
-                              {allergy.trim()}
-                            </span>
-                          </div>
-                        ))}
+                        {data.allergies && data.allergies.trim() && data.allergies !== 'No especificadas' ? 
+                          data.allergies.split(",").map((allergy, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2 p-2 sm:p-3 bg-red-50 rounded-lg border border-red-200"
+                            >
+                              <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 flex-shrink-0" />
+                              <span className="text-xs sm:text-sm font-medium text-red-800 min-w-0 flex-1">
+                                {allergy.trim()}
+                              </span>
+                            </div>
+                          )) : (
+                            <div className="flex items-center gap-2 p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200">
+                              <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
+                              <span className="text-xs sm:text-sm font-medium text-green-800 min-w-0 flex-1">
+                                No se han registrado alergias conocidas
+                              </span>
+                            </div>
+                          )
+                        }
                       </div>
                     </CardContent>
                   </Card>
@@ -1173,9 +1313,7 @@ export function ClinicalHistoryViewerPatient({
                                         <div className="flex items-center gap-1 min-w-0">
                                           <Calendar className="h-3 w-3 flex-shrink-0" />
                                           <span className="truncate">
-                                            {new Date(
-                                              consultation.metadata.consult_date
-                                            ).toLocaleDateString("es-ES", {
+                                            {new Date(consultation.date).toLocaleDateString("es-ES", {
                                               day: "numeric",
                                               month: "short",
                                               year: "numeric",
@@ -1476,32 +1614,27 @@ export function ClinicalHistoryViewerPatient({
                             <div className="grid gap-2 text-sm">
                               <p>
                                 <strong>Fecha:</strong>{" "}
-                                {new Date(
-                                  consultation.metadata.consult_date
-                                ).toLocaleDateString("es-ES")}
+                                {new Date(consultation.date).toLocaleDateString("es-ES")}
                               </p>
                               <p>
                                 <strong>Médico:</strong>{" "}
                                 {consultation.physician_info.name} -{" "}
-                                {
-                                  consultation.physician_info
-                                    .physician_specialty
-                                }
+                                {consultation.physician_info.physician_specialty}
                               </p>
                               <p>
                                 <strong>Síntomas:</strong>{" "}
-                                {consultation.symptoms}
+                                {consultation.symptoms || "No especificados"}
                               </p>
                               <p>
                                 <strong>Diagnóstico:</strong>{" "}
-                                {consultation.diagnosis}
+                                {consultation.diagnosis || "No especificado"}
                               </p>
                               <p>
                                 <strong>Tratamiento:</strong>{" "}
-                                {consultation.treatment}
+                                {consultation.treatment || "No especificado"}
                               </p>
                               <p>
-                                <strong>Notas:</strong> {consultation.notes}
+                                <strong>Notas:</strong> {consultation.notes || "Sin notas"}
                               </p>
                               {consultation.prescriptions &&
                                 consultation.prescriptions.length > 0 && (

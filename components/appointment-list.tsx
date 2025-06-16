@@ -2,86 +2,19 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Clock, MoreVertical, CheckCircle2, X, Calendar, Video, ChevronRight } from "lucide-react"
+import { Calendar, ChevronRight } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Appointment } from "@/services/appointment.service"
 
-// Sample appointment data
-const appointments = [
-  {
-    id: 1,
-    patient: {
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?height=40&width=40&text=SJ",
-      initials: "SJ",
-    },
-    time: "9:00 AM",
-    duration: "30 min",
-    type: "Check-up",
-    status: "confirmed",
-    isVirtual: false,
-  },
-  {
-    id: 2,
-    patient: {
-      name: "Michael Chen",
-      avatar: "/placeholder.svg?height=40&width=40&text=MC",
-      initials: "MC",
-    },
-    time: "10:30 AM",
-    duration: "45 min",
-    type: "Follow-up",
-    status: "confirmed",
-    isVirtual: true,
-  },
-  {
-    id: 3,
-    patient: {
-      name: "Amanda Rodriguez",
-      avatar: "/placeholder.svg?height=40&width=40&text=AR",
-      initials: "AR",
-    },
-    time: "1:15 PM",
-    duration: "60 min",
-    type: "Consultation",
-    status: "pending",
-    isVirtual: false,
-  },
-  {
-    id: 4,
-    patient: {
-      name: "David Wilson",
-      avatar: "/placeholder.svg?height=40&width=40&text=DW",
-      initials: "DW",
-    },
-    time: "3:00 PM",
-    duration: "30 min",
-    type: "Check-up",
-    status: "confirmed",
-    isVirtual: true,
-  },
-  {
-    id: 5,
-    patient: {
-      name: "Emily Thompson",
-      avatar: "/placeholder.svg?height=40&width=40&text=ET",
-      initials: "ET",
-    },
-    time: "4:30 PM",
-    duration: "45 min",
-    type: "Follow-up",
-    status: "confirmed",
-    isVirtual: false,
-  },
-]
 
-export function AppointmentList() {
-  const [expandedAppointment, setExpandedAppointment] = useState<number | null>(null)
 
-  const toggleExpand = (id: number) => {
+export function AppointmentList({ appointments }: { appointments: Appointment[] }) {
+  const [expandedAppointment, setExpandedAppointment] = useState<string | null>(null)
+
+  const toggleExpand = (id: string) => {
     setExpandedAppointment(expandedAppointment === id ? null : id)
   }
 
@@ -100,9 +33,9 @@ export function AppointmentList() {
         >
           <div className="relative">
                          <Avatar className="h-10 w-10">
-               <AvatarImage src={appointment.patient.avatar} alt={appointment.patient.name} />
+               <AvatarImage src="" alt={appointment.patient_name} />
                <AvatarFallback className="bg-blue-500 text-white">
-                 {appointment.patient.initials}
+                 {appointment.patient_name?.charAt(0)}
                </AvatarFallback>
              </Avatar>
             <div className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white dark:border-slate-800 ${
@@ -115,15 +48,15 @@ export function AppointmentList() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                {appointment.patient.name}
+                {appointment.patient_name}
               </p>
               <time className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
-                {appointment.time}
+                {new Date(appointment.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </time>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                {appointment.type}
+                {appointment.reason}
               </p>
               <Badge 
                 variant="secondary" 

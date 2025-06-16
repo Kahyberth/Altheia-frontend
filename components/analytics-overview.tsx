@@ -237,46 +237,6 @@ export function AnalyticsOverview() {
         </motion.div>
       </div>
 
-      <div>
-        <h4 className="mb-2 text-sm font-medium">Uso de Funciones</h4>
-        <motion.div initial="hidden" animate="visible" variants={chartVariants} className="h-[180px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={resourceUsageData}
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={70}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {resourceUsageData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "white",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-                  border: "none",
-                }}
-                formatter={(value) => [`${value}%`, "Uso"]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </motion.div>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {resourceUsageData.map((item, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-              <span className="text-xs">{item.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Estadísticas adicionales */}
       <div className="border-t pt-4 dark:border-slate-600">
         <div className="grid grid-cols-2 gap-4 text-center">
