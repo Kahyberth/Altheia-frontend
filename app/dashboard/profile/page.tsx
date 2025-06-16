@@ -155,6 +155,7 @@ export default function ProfilePage() {
   const [clinicEps, setClinicEps] = useState<Array<{id: string, name: string}>>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [showAllActivitiesModal, setShowAllActivitiesModal] = useState(false);
   const { user, logout } = useAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -181,7 +182,31 @@ export default function ProfilePage() {
       setLoadingActivities(true);
       const response = await loginActivityService(user.id);
       const activities = response.data?.activities || [];
-      setLoginActivities(activities);
+      
+      
+      const filteredActivities = activities.reduce((acc: any[], current: any) => {
+        const existingActivityIndex = acc.findIndex(
+          activity => activity.ip_address === current.ip_address
+        );
+        
+        if (existingActivityIndex === -1) {
+          acc.push(current);
+        } else {
+          const existingActivity = acc[existingActivityIndex];
+          if (new Date(current.login_time) > new Date(existingActivity.login_time)) {
+            acc[existingActivityIndex] = current;
+          }
+        }
+        
+        return acc;
+      }, []);
+      
+      const sortedActivities = filteredActivities.sort(
+        (a: { login_time: string }, b: { login_time: string }) => 
+          new Date(b.login_time).getTime() - new Date(a.login_time).getTime()
+      );
+      
+      setLoginActivities(sortedActivities);
     } catch (error) {
       console.error('Error fetching login activities:', error);
     } finally {
@@ -1267,7 +1292,7 @@ export default function ProfilePage() {
                                 </div>
                               </div>
                             ) : loginActivities.length > 0 ? (
-                              loginActivities.map((activity, index) => (
+                              loginActivities.slice(0, 5).map((activity, index) => (
                                 <div
                                   key={activity.id || index}
                                   className="flex items-start gap-3"
@@ -1331,8 +1356,9 @@ export default function ProfilePage() {
                           <Button
                             variant="outline"
                             className="w-full dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600"
+                            onClick={() => setShowAllActivitiesModal(true)}
                           >
-                            Ver todas las actividades
+                            Ver todas las actividades ({loginActivities.length})
                           </Button>
                         </CardFooter>
                       </Card>
@@ -1521,6 +1547,101 @@ export default function ProfilePage() {
         onOpenChange={setShowDeleteDialog}
         onDelete={handleDeleteAccount}
       />
+
+      {/* All Activities Modal */}
+      <Dialog open={showAllActivitiesModal} onOpenChange={setShowAllActivitiesModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] dark:bg-slate-800 dark:border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">
+              Todas las actividades de inicio de sesión
+            </DialogTitle>
+            <DialogDescription className="dark:text-slate-400">
+              Historial completo de actividades de inicio de sesión en tu cuenta
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto pr-2">
+            <div className="space-y-4">
+              {loadingActivities ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Cargando actividades...
+                  </div>
+                </div>
+              ) : loginActivities.length > 0 ? (
+                loginActivities.map((activity, index) => (
+                  <div
+                    key={activity.id || index}
+                    className="flex items-start gap-3 p-4 border rounded-lg dark:border-slate-600"
+                  >
+                    <div className="rounded-full bg-slate-100 dark:bg-slate-700 p-2">
+                      <Lock className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium dark:text-white">
+                          {activity.device_type || "Unknown Device"}
+                        </div>
+                        {activity.is_current_session && (
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 text-xs dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
+                          >
+                            Sesión actual
+                          </Badge>
+                        )}
+                      </div>
+                      {activity.user_agent && activity.user_agent !== activity.device_type && (
+                        <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                          {activity.user_agent}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mt-2">
+                        <span>{activity.location}</span>
+                        <span>•</span>
+                        <span>
+                          {new Date(activity.login_time).toLocaleString(
+                            "es-ES",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </span>
+                        {activity.ip_address && (
+                          <>
+                            <span>•</span>
+                            <span className="text-sm text-slate-400 font-mono">
+                              {activity.ip_address}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    No se encontraron actividades de inicio de sesión
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAllActivitiesModal(false)}
+              className="dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:hover:bg-slate-600"
+            >
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

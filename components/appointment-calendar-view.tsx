@@ -15,7 +15,6 @@ interface AppointmentCalendarViewProps {
   patients: any[]
   providers: any[]
   appointmentTypes: any[]
-  appointmentLocations: any[]
   selectedDate: Date
   viewMode: "day" | "week" | "list"
   weekStartDate: Date
@@ -28,7 +27,6 @@ export function AppointmentCalendarView({
   patients,
   providers,
   appointmentTypes,
-  appointmentLocations,
   selectedDate,
   viewMode,
   weekStartDate,
@@ -71,14 +69,12 @@ export function AppointmentCalendarView({
     const patient = patients.find((p) => p.id === appointment.patientId)
     const provider = providers.find((p) => p.id === appointment.providerId)
     const type = appointmentTypes.find((t) => t.id === appointment.type)
-    const location = appointmentLocations.find((l) => l.id === appointment.location)
 
     return {
       ...appointment,
       patient,
       provider,
       type,
-      location,
     }
   }
 

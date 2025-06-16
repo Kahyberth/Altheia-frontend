@@ -1,11 +1,7 @@
 import OwnerDashboardPage from "@/components/Dashboard/Owner/page";
 import PatientDashboardPage from "@/components/Dashboard/Patient/page";
-import { OwnerOnly, PatientOnly } from "@/guard/RoleGuard";
-
-
-
-
-
+import ReceptionistDashboardPage from "@/components/Dashboard/Receptionist/page";
+import { OwnerOnly, PatientOnly, ReceptionistOnly } from "@/guard/RoleGuard";
 
 export default function DashboardPage() {
   return (
@@ -16,6 +12,9 @@ export default function DashboardPage() {
       <OwnerOnly>
         <OwnerDashboardPage />
       </OwnerOnly>
+      <ReceptionistOnly>
+        <ReceptionistDashboardPage />
+      </ReceptionistOnly>
     </div>
   )
 }

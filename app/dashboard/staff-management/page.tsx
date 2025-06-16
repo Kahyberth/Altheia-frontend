@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { motion, Variants } from "framer-motion"
 import {
   Users,
   UserPlus,
@@ -13,10 +13,8 @@ import {
   FlaskRoundIcon as Flask,
   Menu,
 } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
-import StaffManagementLoading from "./loading"
 import { useAuth } from "@/context/AuthContext"
-import { getClinicInformation, getPersonnelInClinic } from "@/services/clinic.service"
+import { getClinicInformation } from "@/services/clinic.service"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -73,24 +71,50 @@ export default function StaffManagementPage() {
     setIsDetailsOpen(true)
   }
 
-  // Fetch staff from backend
   useEffect(() => {
     const fetchStaff = async () => {
       if (!user?.id) return
       try {
         const clinicRes = await getClinicInformation(user.id)
-        const clinicId = clinicRes.data?.clinic?.id || clinicRes.data?.information?.clinic_id
-        if (!clinicId) throw new Error("No clinic id found")
-        const personnelRes = await getPersonnelInClinic(clinicId)
-        const formatted = (personnelRes.data || []).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          role: p.rol,
-          email: p.email,
-          phone: p.phone,
-          status: p.status ? "active" : "inactive",
-        }))
-        setStaffList(formatted)
+        const clinic = clinicRes.data?.clinic
+        if (!clinic) throw new Error("No clinic found")
+        
+        // Combine all staff from the new structure
+        const allStaff = [
+          // Physicians
+          ...clinic.physicians.map((p: any) => ({
+            id: p.user.id,
+            name: p.user.name,
+            role: 'physician',
+            email: p.user.email,
+            phone: p.user.phone,
+            status: p.user.status ? "active" : "inactive",
+            specialty: p.physician_specialty,
+            license: p.license_number,
+          })),
+          // Receptionists
+          ...clinic.receptionists.map((r: any) => ({
+            id: r.user.id,
+            name: r.user.name,
+            role: 'receptionist',
+            email: r.user.email,
+            phone: r.user.phone,
+            status: r.user.status ? "active" : "inactive",
+          })),
+          // Patients
+          ...clinic.patients.map((p: any) => ({
+            id: p.user.id,
+            name: p.user.name,
+            role: 'patient',
+            email: p.user.email,
+            phone: p.user.phone,
+            status: p.user.status ? "active" : "inactive",
+            eps: p.eps,
+            blood_type: p.blood_type,
+          })),
+        ]
+        
+        setStaffList(allStaff)
       } catch (err) {
         console.error("Error fetching personnel:", err)
       } finally {
@@ -141,7 +165,7 @@ export default function StaffManagementPage() {
 
   const filteredStaff = getFilteredStaff()
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -152,7 +176,7 @@ export default function StaffManagementPage() {
     },
   }
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,

@@ -42,7 +42,7 @@ import { PatientAddDialog } from "@/components/patient-add-dialog"
 import { PatientData, PatientPaginated } from "@/services/patients"
 import { patientService } from "@/services/patients"
 import { useAuth } from "@/context/AuthContext"
-import { getClinicInformation, getPatientsInClinic } from "@/services/clinic.service"
+import { getClinicInformationByUser, getPatientsInClinic } from "@/services/clinic.service"
 
 interface EnhancedPatient extends PatientData {
   avatar: string;
@@ -80,7 +80,7 @@ export default function PatientsPage() {
     const fetchPatients = async () => {
       if (!user?.id) return
       try {
-        const clinicRes = await getClinicInformation(user.id)
+        const clinicRes = await getClinicInformationByUser(user)
         const clinicId = clinicRes.data?.clinic?.id || clinicRes.data?.information?.clinic_id
         if (!clinicId) throw new Error("No clinic id found")
         const res = await getPatientsInClinic(clinicId)

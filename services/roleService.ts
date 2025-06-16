@@ -72,8 +72,8 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
     navigationItems: [
       { id: 'dashboard', label: 'Mi Panel', icon: 'LayoutDashboard', href: '/dashboard' },
       { id: 'appointments', label: 'Mis Citas', icon: 'Calendar', href: '/dashboard/appointments' },
-      { id: 'records', label: 'Mi Historial', icon: 'FileText', href: '/dashboard/records' },
-      { id: 'prescriptions', label: 'Mis Recetas', icon: 'Pill', href: '/dashboard/prescriptions' },
+      { id: 'records', label: 'Historial Clínico', icon: 'FileText', href: '/dashboard/patient-history' },
+      { id: 'lab-orders', label: 'Órdenes de Laboratorio', icon: 'FlaskConical', href: '/dashboard/lab-orders' },
       { id: 'profile', label: 'Mi Perfil', icon: 'User', href: '/dashboard/profile' }
     ]
   },
@@ -84,14 +84,16 @@ const roleConfigurations: Record<UserRole, RoleConfig> = {
     permissions: [
       { resource: 'appointments', actions: ['create', 'read', 'update', 'delete'] },
       { resource: 'patients', actions: ['create', 'read', 'update'] },
-      { resource: 'payments', actions: ['create', 'read', 'update'] }
+      { resource: 'records', actions: ['read', 'update'] },
+      { resource: 'lab_results', actions: ['read', 'update'] },
     ],
     navigationItems: [
       { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', href: '/dashboard' },
       { id: 'appointments', label: 'Gestión de Citas', icon: 'Calendar', href: '/dashboard/appointments' },
       { id: 'patients', label: 'Registro de Pacientes', icon: 'Users', href: '/dashboard/patients' },
-      { id: 'payments', label: 'Pagos', icon: 'CreditCard', href: '/dashboard/payments' },
-      { id: 'waiting-room', label: 'Sala de Espera', icon: 'Users2', href: '/dashboard/waiting-room' }
+      { id: 'records', label: 'Historial Clínico', icon: 'FileText', href: '/dashboard/patient-history' },
+      { id: 'lab-results', label: 'Resultados', icon: 'Activity', href: '/dashboard/lab-results' },
+
     ]
   }
 };

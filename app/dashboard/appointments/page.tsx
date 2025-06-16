@@ -46,7 +46,9 @@ import { NewAppointmentDialog } from "@/components/new-appointment-dialog"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { AppointmentCalendarView } from "@/components/appointment-calendar-view"
 import { appointmentService, Appointment as BackendAppointment } from "@/services/appointment.service"
-import { physicianService } from "@/services/physician"
+import { getClinicInformationByUser, getAllServices } from "@/services/clinic.service"
+import { useAuth } from "@/context/AuthContext"
+import { useRole } from "@/hooks/useRole"
 
 // Sample appointment types
 const appointmentTypes = [
@@ -58,14 +60,6 @@ const appointmentTypes = [
   { id: "imaging", name: "Imaging", duration: 30 },
   { id: "therapy", name: "Therapy", duration: 60 },
   { id: "vaccination", name: "Vaccination", duration: 15 },
-]
-
-// Sample appointment locations
-const appointmentLocations = [
-  { id: "main-clinic", name: "Main Clinic", address: "123 Medical Center Dr, Suite 100" },
-  { id: "north-branch", name: "North Branch", address: "456 Health Parkway, Building B" },
-  { id: "south-branch", name: "South Branch", address: "789 Wellness Blvd, Suite 200" },
-  { id: "virtual", name: "Virtual Visit", address: "Online" },
 ]
 
 // Define types for our frontend data
@@ -111,6 +105,8 @@ interface FrontendProvider {
 
 export default function AppointmentsPage() {
   const isMobile = useMobile()
+  const { user } = useAuth()
+  const { isPatient, role } = useRole()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -127,70 +123,162 @@ export default function AppointmentsPage() {
   const [weekStartDate, setWeekStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [appointments, setAppointments] = useState<FrontendAppointment[]>([])
   const [providers, setProviders] = useState<FrontendProvider[]>([])
+  const [specialtyMap, setSpecialtyMap] = useState<Record<string, string>>({})
+
+  // Helper function to transform backend appointments to frontend appointments
+  const transformAppointments = (backendAppointments: BackendAppointment[], specialtyMapping: Record<string, string> = {}): FrontendAppointment[] => {
+    console.log('Transforming appointments:', backendAppointments)
+    
+    return backendAppointments.map((apt: BackendAppointment) => {
+      console.log('Processing appointment:', apt)
+      
+      const dateTime = new Date(apt.date_time)
+      console.log('Date parsing:', {
+        original: apt.date_time,
+        parsed: dateTime,
+        formatted: format(dateTime, "yyyy-MM-dd"),
+        time: format(dateTime, "HH:mm")
+      })
+      
+      // Calculate age from date_of_birth, safely
+      const birthDate = apt.Patient?.date_of_birth ? new Date(apt.Patient.date_of_birth) : null;
+      const age = birthDate
+        ? Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        : 0;
+      
+      // Get patient name from various possible sources
+      const patientName = apt.patient_name || apt.Patient?.name || "Unknown Patient"
+      
+      // Get physician name from various possible sources  
+      const physicianName = apt.physician_name || "Unknown Physician"
+      
+      const transformed = {
+        id: apt.id,
+        patientId: apt.patient_id,
+        providerId: apt.physician_id,
+        date: format(dateTime, "yyyy-MM-dd"),
+        startTime: format(dateTime, "HH:mm"),
+        appointmentType: apt.reason,
+        status: mapBackendStatus(apt.status),
+        notes: apt.reason,
+        createdAt: apt.createdAt,
+        updatedAt: apt.updatedAt,
+                 patient: {
+           id: apt.Patient?.id,
+           name: patientName,
+           age: age,
+           gender: apt.patient_gender,
+           email: apt.patient_email,
+           phone: apt.patient_phone,
+           avatar: "/placeholder.svg?height=128&width=128&text=" + (patientName || "?").split(" ").map((n: string) => n[0] || "?").join(""),
+         },
+        provider: apt.Physician ? {
+          id: apt.Physician.id,
+          name: physicianName,
+          specialty: (() => {
+            const originalSpecialty = apt.Physician.physician_specialty;
+            const mappedSpecialty = specialtyMapping[originalSpecialty];
+            return mappedSpecialty || originalSpecialty || "General";
+          })(),
+                     avatar: "/placeholder.svg?height=128&width=128&text=" + (physicianName || "?").split(" ").map((n: string) => n[0] || "?").join(""),
+        } : undefined,
+        locationDetails: {
+          id: apt.clinic_id,
+          name: apt.clinic_name || "Unknown Clinic",
+          address: apt.clinic_address || "Unknown Address",
+        },
+      }
+      
+      console.log('Transformed appointment:', transformed)
+      return transformed
+    })
+  }
+
+  // Helper function to fetch and set appointments for a physician
+  const fetchAppointmentsForPhysician = async (physicianId: string, specialtyMapping: Record<string, string> = {}) => {
+    try {
+      console.log('Fetching appointments for physician ID:', physicianId)
+      const backendAppointments = await appointmentService.getAppointmentsByPhysicianId(physicianId)
+      console.log('Fetched appointments:', backendAppointments)
+      
+      const transformedAppointments = transformAppointments(backendAppointments, specialtyMapping)
+      setAppointments(transformedAppointments)
+      console.log("TRANSFORMED APPOINTMENTS", transformedAppointments)
+    } catch (error) {
+      console.error('Error fetching appointments:', error)
+    }
+  }
+
+  // Helper function to fetch and set appointments for a patient
+  const fetchAppointmentsForPatient = async (userId: string, specialtyMapping: Record<string, string> = {}) => {
+    try {
+      console.log('Fetching appointments for user ID:', userId)
+      const backendAppointments = await appointmentService.getAppointmentsByUserId(userId)
+      console.log('Fetched patient appointments:', backendAppointments)
+      
+      const transformedAppointments = transformAppointments(backendAppointments, specialtyMapping)
+      setAppointments(transformedAppointments)
+      console.log("TRANSFORMED PATIENT APPOINTMENTS", transformedAppointments)
+    } catch (error) {
+      console.error('Error fetching patient appointments:', error)
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user?.id) return
+      
       try {
-        // Fetch physicians
-        const physicians = await physicianService.getAllPhysicians()
-        const transformedPhysicians = physicians.map((physician) => ({
-          id: physician.physician_id,
-          name: physician.name,
-          specialty: physician.physician_specialty,
-          avatar: "/placeholder.svg?height=128&width=128&text=" + physician.name.split(" ").map(n => n[0]).join(""),
-        }))
-        setProviders(transformedPhysicians)
-
-        // Fetch appointments for the first physician (you might want to change this based on your requirements)
-        if (transformedPhysicians.length > 0) {
-          const backendAppointments = await appointmentService.getAppointmentsByPhysicianId(transformedPhysicians[0].id)
-          const transformedAppointments = backendAppointments.map((apt: BackendAppointment) => {
-            const dateTime = new Date(apt.date_time)
-            // Calculate age from date_of_birth, safely
-            const birthDate = apt.patient?.date_of_birth ? new Date(apt.patient.date_of_birth) : null;
-            const age = birthDate
-              ? Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-              : 0;
-            
-            return {
-              id: apt.id,
-              patientId: apt.patient_id,
-              providerId: apt.physician_id,
-              date: format(dateTime, "yyyy-MM-dd"),
-              startTime: format(dateTime, "HH:mm"),
-              appointmentType: apt.reason,
-              status: mapBackendStatus(apt.status),
-              notes: "Faltan agregar al json",
-              createdAt: apt.createdAt,
-              updatedAt: apt.updatedAt,
-              patient: apt.patient
-                ? {
-                    id: apt.patient.id,
-                    name: apt.patient_name,
-                    age: age,
-                    gender: apt.patient_gender,
-                    email: apt.patient_email,
-                    phone: apt.patient_phone,
-                    avatar: "/placeholder.svg?height=128&width=128&text=" + apt.patient_name.split(" ").map(n => n[0]).join(""),
-                  }
-                : undefined,
-              provider: apt.physician
-                ? {
-                    id: apt.physician.id,
-                    name: apt.physician_name,
-                    specialty: apt.physician.physician_specialty,
-                    avatar: "/placeholder.svg?height=128&width=128&text=" + apt.physician_name.split(" ").map(n => n[0]).join(""),
-                  }
-                : undefined,
-              locationDetails: {
-                id: apt.clinic_id,
-                name: apt.clinic_name,
-                address: apt.clinic_address,
-              },
-            }
+        // Load services/specialties to create mapping first
+        let specialtyMapping: Record<string, string> = {}
+        try {
+          const servicesResponse = await getAllServices(1, 100) // Get all services
+          const services = Array.isArray(servicesResponse.data) 
+            ? servicesResponse.data 
+            : (servicesResponse.data as any).data ?? []
+          
+          // Create mapping of ID to name
+          services.forEach((service: any) => {
+            specialtyMapping[service.id] = service.name
           })
-          setAppointments(transformedAppointments)
-          console.log("TRANSFORMED APPOINTMENTS", transformedAppointments)
+          setSpecialtyMap(specialtyMapping)
+          console.log('Specialty mapping:', specialtyMapping)
+        } catch (error) {
+          console.error('Error loading specialties:', error)
+        }
+
+        // If user is a patient, fetch only their appointments
+        if (user?.role === 'patient') {
+          console.log('User is a patient, fetching patient appointments for user ID:', user.id)
+          await fetchAppointmentsForPatient(user.id, specialtyMapping)
+        } else {
+          // For staff/physicians, show appointments from clinic
+          // Get clinic information to fetch physicians from current clinic only
+          const clinicResponse = await getClinicInformationByUser(user)
+          const clinic = clinicResponse.data?.clinic
+          
+          if (!clinic) {
+            console.error("No clinic found for user")
+            return
+          }
+
+          // Transform physicians from clinic data
+          const transformedPhysicians = clinic.physicians
+            .filter((physician) => physician.status && physician.user?.status) // Only active physicians
+            .map((physician) => ({
+              id: physician.id, // Use the physician's ID directly from clinic data
+              name: physician.user.name,
+              specialty: specialtyMapping[physician.physician_specialty] || physician.physician_specialty, // Map ID to name
+              avatar: "/placeholder.svg?height=128&width=128&text=" + physician.user.name.split(" ").map(n => n[0]).join(""),
+            }))
+          
+          console.log('Clinic physicians:', transformedPhysicians)
+          setProviders(transformedPhysicians)
+
+          // Fetch appointments for the first physician from the clinic
+          if (transformedPhysicians.length > 0) {
+            await fetchAppointmentsForPhysician(transformedPhysicians[0].id, specialtyMapping)
+          }
         }
       } catch (error) {
         console.error("Error fetching data:", error)
@@ -200,7 +288,7 @@ export default function AppointmentsPage() {
     }
 
     fetchData()
-  }, [])
+  }, [user?.id, user?.role])
 
   // Helper function to map backend status to frontend status
   const mapBackendStatus = (status: string): string => {
@@ -397,82 +485,25 @@ export default function AppointmentsPage() {
 
   const handleAppointmentCreated = async () => {
     console.log('Appointment created, refreshing data...')
-    // Refresh appointments for the current physician
-    if (providers.length > 0) {
-      try {
-        const backendAppointments = await appointmentService.getAppointmentsByPhysicianId(providers[0].id)
-        console.log('Fetched appointments:', backendAppointments)
-        
-        const transformedAppointments = backendAppointments.map((apt: BackendAppointment) => {
-          // Parse the date and time while preserving the timezone
-          const [datePart, timePart] = apt.date_time.split('T')
-          const [year, month, day] = datePart.split('-').map(Number)
-          const [hours, minutes] = timePart.split(':').map(Number)
-          
-          // Create date object with explicit timezone handling
-          const dateTime = new Date(year, month - 1, day, hours, minutes)
-          console.log('Processing appointment:', {
-            id: apt.id,
-            originalDateTime: apt.date_time,
-            parsedDateTime: dateTime,
-            formattedDate: format(dateTime, "yyyy-MM-dd"),
-            formattedTime: format(dateTime, "HH:mm"),
-            hours: hours,
-            minutes: minutes
-          })
-          
-          // Calculate age from date_of_birth, safely
-          const birthDate = apt.patient?.date_of_birth ? new Date(apt.patient.date_of_birth) : null;
-          const age = birthDate
-            ? Math.floor((new Date().getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-            : 0;
-          
-          const transformed = {
-            id: apt.id,
-            patientId: apt.patient_id,
-            providerId: apt.physician_id,
-            date: format(dateTime, "yyyy-MM-dd"),
-            startTime: format(dateTime, "HH:mm"), // Keep 24-hour format for internal use
-            appointmentType: apt.reason,
-            status: mapBackendStatus(apt.status),
-            notes: apt.reason,
-            createdAt: apt.createdAt,
-            updatedAt: apt.updatedAt,
-            patient: apt.patient
-              ? {
-                  id: apt.patient.id,
-                  name: apt.patient_name,
-                  age: age,
-                  gender: apt.patient_gender,
-                  email: apt.patient_email,
-                  phone: apt.patient_phone,
-                  avatar: "/placeholder.svg?height=128&width=128&text=" + apt.patient_name.split(" ").map(n => n[0]).join(""),
-                }
-              : undefined,
-            provider: apt.physician
-              ? {
-                  id: apt.physician.id,
-                  name: apt.physician_name,
-                  specialty: apt.physician.physician_specialty,
-                  avatar: "/placeholder.svg?height=128&width=128&text=" + apt.physician_name.split(" ").map(n => n[0]).join(""),
-                }
-              : undefined,
-            locationDetails: {
-              id: apt.clinic_id,
-              name: apt.clinic_name,
-              address: apt.clinic_address,
-            },
-          }
-          console.log('Transformed appointment:', transformed)
-          return transformed
-        })
-        
-        console.log('Setting appointments:', transformedAppointments)
-        setAppointments(transformedAppointments)
-      } catch (error) {
-        console.error('Error refreshing appointments:', error)
+    console.log('Current user info in handleAppointmentCreated:', {
+      userId: user?.id,
+      userRole: user?.role,
+      specialtyMapLength: Object.keys(specialtyMap).length
+    })
+    
+    if (user?.role === 'patient') {
+      console.log('Refreshing appointments for patient user ID:', user?.id)
+      // Refresh appointments for the current patient
+      await fetchAppointmentsForPatient(user?.id || '', specialtyMap)
+    } else {
+      console.log('Refreshing appointments for physician. Providers length:', providers.length)
+      // Refresh appointments for the current physician
+      if (providers.length > 0) {
+        console.log('Using physician ID:', providers[0].id)
+        await fetchAppointmentsForPhysician(providers[0].id, specialtyMap)
       }
     }
+    console.log('Data refresh completed')
   }
 
   if (isLoading) {
@@ -513,8 +544,15 @@ export default function AppointmentsPage() {
           <motion.div initial="hidden" animate="show" variants={container} className="mx-auto max-w-7xl space-y-6">
             {/* Page Title */}
             <motion.div variants={item} className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold tracking-tight">Appointments</h1>
-              <p className="text-sm text-slate-500">Manage and schedule patient appointments</p>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {user?.role === 'patient' ? "Mis Citas" : "Appointments"}
+              </h1>
+              <p className="text-sm text-slate-500">
+                {user?.role === 'patient' 
+                  ? "Consulta y gestiona tus citas médicas" 
+                  : "Manage and schedule patient appointments"
+                }
+              </p>
             </motion.div>
 
             {/* Appointment Actions and Date Navigation */}
@@ -597,7 +635,7 @@ export default function AppointmentsPage() {
                       </div>
                       <Button onClick={() => setShowNewAppointmentDialog(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        New Appointment
+                        {user?.role === 'patient' ? "Nueva Cita" : "New Appointment"}
                       </Button>
                     </div>
                   </div>
@@ -612,7 +650,10 @@ export default function AppointmentsPage() {
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
                   <Input
                     type="search"
-                    placeholder="Search appointments by patient, provider, or notes..."
+                    placeholder={user?.role === 'patient'
+                      ? "Buscar en tus citas..." 
+                      : "Search appointments by patient, provider, or notes..."
+                    }
                     className="w-full pl-8 focus-visible:ring-blue-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -632,19 +673,21 @@ export default function AppointmentsPage() {
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Select value={providerFilter} onValueChange={setProviderFilter}>
-                    <SelectTrigger className="w-[160px] bg-white">
-                      <SelectValue placeholder="Provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Providers</SelectItem>
-                      {providers.map((provider) => (
-                        <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {user?.role !== 'patient' && (
+                    <Select value={providerFilter} onValueChange={setProviderFilter}>
+                      <SelectTrigger className="w-[160px] bg-white">
+                        <SelectValue placeholder="Provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Providers</SelectItem>
+                        {providers.map((provider) => (
+                          <SelectItem key={provider.id} value={provider.id}>
+                            {provider.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="bg-white">
@@ -662,14 +705,6 @@ export default function AppointmentsPage() {
                             <SelectTrigger className="h-8 w-full">
                               <SelectValue placeholder="All Locations" />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Locations</SelectItem>
-                              {appointmentLocations.map((location) => (
-                                <SelectItem key={location.id} value={location.id}>
-                                  {location.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
                           </Select>
                         </div>
                         <div className="mb-2 space-y-1">
@@ -868,7 +903,6 @@ export default function AppointmentsPage() {
                         patients={[]}
                         providers={[]}
                         appointmentTypes={appointmentTypes}
-                        appointmentLocations={appointmentLocations}
                         selectedDate={selectedDate}
                         viewMode={viewMode}
                         weekStartDate={weekStartDate}
@@ -887,6 +921,7 @@ export default function AppointmentsPage() {
                     appointment={appointmentDetails}
                     onClose={() => setSelectedAppointment(null)}
                     onCancel={handleCancelAppointment}
+                    onRescheduleSuccess={handleAppointmentCreated}
                   />
                 </motion.div>
               )}
@@ -900,7 +935,6 @@ export default function AppointmentsPage() {
         open={showNewAppointmentDialog}
         onOpenChange={setShowNewAppointmentDialog}
         appointmentTypes={appointmentTypes}
-        appointmentLocations={appointmentLocations}
         onAppointmentCreated={handleAppointmentCreated}
       />
 

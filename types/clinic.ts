@@ -9,7 +9,62 @@ export interface EPS {
     name: string;
 }
 
+export interface PersonnelUser {
+    id: string;
+    name: string;
+    email: string;
+    password: string;
+    rol: string;
+    phone: string;
+    document_number: string;
+    status: boolean;
+    gender: string;
+    createdAt: Date;
+    updatedAt: Date;
+    lastLogin: Date;
+    patient: Patient;
+    physician: ClinicOwner;
+    receptionist: ClinicOwner;
+    clinic_owner: ClinicOwner;
+    lab_technician: ClinicOwner;
+}
 
+export interface ClinicPhysician {
+    id: string;
+    user_id: string;
+    user: PersonnelUser;
+    physician_specialty: string;
+    license_number: string;
+    status: boolean;
+    clinic_id: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface ClinicReceptionist {
+    id: string;
+    user_id: string;
+    user: PersonnelUser;
+    clinic_id: string;
+    status: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface ClinicPatient {
+    id: string;
+    user_id: string;
+    user: PersonnelUser;
+    name: string;
+    date_of_birth: string;
+    address: string;
+    eps: string;
+    blood_type: string;
+    status: boolean;
+    clinic_id: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
 
 export interface ClinicInformation {
     clinic:      Clinic;
@@ -23,6 +78,9 @@ export interface Clinic {
     created_at:         Date;
     user_id:            string;
     updated_at:         Date;
+    physicians:         ClinicPhysician[];
+    receptionists:      ClinicReceptionist[];
+    patients:           ClinicPatient[];
     clinic_information: Information;
 }
 
@@ -162,16 +220,6 @@ export interface ClinicByClinicID {
     clinic:      Clinic;
     owner:       Owner;
     information: Information;
-}
-
-export interface Clinic {
-    id:                 string;
-    status:             boolean;
-    created_at:         Date;
-    user_id:            string;
-    updated_at:         Date;
-    patients:           Patient[];
-    clinic_information: Information;
 }
 
 export interface Information {

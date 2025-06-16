@@ -24,18 +24,34 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format, parseISO } from "date-fns"
 import { FrontendAppointment } from "@/app/dashboard/appointments/page"
+import { RescheduleAppointmentDialog } from "@/components/reschedule-appointment-dialog"
+import { useState } from "react"
 
 interface AppointmentDetailsProps {
   appointment: FrontendAppointment
   onClose: () => void
   onCancel: (appointmentId: string) => void
+  onRescheduleSuccess?: () => void
 }
 
-export function AppointmentDetails({ appointment, onClose, onCancel }: AppointmentDetailsProps) {
+export function AppointmentDetails({ appointment, onClose, onCancel, onRescheduleSuccess }: AppointmentDetailsProps) {
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
+  
   const canCancel = ["scheduled", "confirmed"].includes(appointment.status)
   const canCheckIn = ["scheduled", "confirmed"].includes(appointment.status)
   const canComplete = appointment.status === "checked-in"
   const canReschedule = ["scheduled", "confirmed"].includes(appointment.status)
+
+  const handleReschedule = () => {
+    setShowRescheduleDialog(true)
+  }
+
+  const handleRescheduleSuccess = () => {
+    setShowRescheduleDialog(false)
+    if (onRescheduleSuccess) {
+      onRescheduleSuccess()
+    }
+  }
 
   return (
     <Card className="sticky top-4">
@@ -142,7 +158,7 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
                       </Button>
                     )}
                     {canReschedule && (
-                      <Button variant="outline" className="justify-start">
+                      <Button variant="outline" className="justify-start" onClick={handleReschedule}>
                         <RefreshCw className="mr-2 h-4 w-4 text-blue-500" />
                         Reschedule
                       </Button>
@@ -201,14 +217,6 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
                     <Button variant="outline" className="justify-start">
                       <Calendar className="mr-2 h-4 w-4 text-blue-500" />
                       View All Appointments
-                    </Button>
-                    <Button variant="outline" className="justify-start">
-                      <MessageSquare className="mr-2 h-4 w-4 text-blue-500" />
-                      Send Message
-                    </Button>
-                    <Button variant="outline" className="justify-start">
-                      <Phone className="mr-2 h-4 w-4 text-blue-500" />
-                      Call Patient
                     </Button>
                   </div>
                 </div>
@@ -279,6 +287,20 @@ export function AppointmentDetails({ appointment, onClose, onCancel }: Appointme
           <span>Last updated: {appointment.updatedAt ? format(parseISO(appointment.updatedAt), "MMM d, yyyy h:mm a") : "N/A"}</span>
         </div>
       </CardFooter>
+      <RescheduleAppointmentDialog
+        open={showRescheduleDialog}
+        onOpenChange={setShowRescheduleDialog}
+        appointment={{
+          id: appointment.id,
+          doctor: appointment.provider?.name || "Unknown Doctor",
+          specialty: appointment.provider?.specialty || "Unknown Specialty",
+          date: format(parseISO(appointment.date), "EEEE, MMMM d, yyyy"),
+          time: formatTime(appointment.startTime),
+          location: appointment.locationDetails?.name || "Unknown Location",
+          providerId: appointment.providerId,
+        }}
+        onRescheduleSuccess={handleRescheduleSuccess}
+      />
     </Card>
   )
 }

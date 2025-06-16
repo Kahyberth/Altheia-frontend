@@ -7,12 +7,7 @@ import {
   Activity,
   FileText,
   User,
-  FlaskConical,
-  Clock,
-  MapPin,
-  CalendarSync,
-  CalendarX,
-  ChevronRight,
+  FlaskConical
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +15,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -32,11 +26,17 @@ import { useRouter } from "next/navigation";
 import { NextAppointmentCard } from "./next-appointment-card";
 import LabResults from "./lab-results";
 import { RecentActivity } from "@/components/recent-activity";
+import { ClinicalHistoryViewerPatient } from "./clinical-history-viewer-patient";
+import { appointmentService, Appointment as BackendAppointment } from "@/services/appointment.service";
+import { getAllServices } from "@/services/clinic.service";
+import { format } from "date-fns";
 
 export default function PatientDashboardPage() {
   const isMobile = useMobile();
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [showClinicalHistory, setShowClinicalHistory] = useState(false);
+  const [nextAppointment, setNextAppointment] = useState<any>(null);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -47,34 +47,120 @@ export default function PatientDashboardPage() {
       icon: User,
       color: "bg-blue-50 text-blue-600",
       href: "profile",
+      action: () => router.push("/dashboard/profile"),
     },
     {
       title: "Citas",
       icon: Calendar,
       color: "bg-cyan-50 text-cyan-600",
       href: "appointments",
+      action: () => router.push("/dashboard/appointments"),
     },
     {
       title: "Historial Clínico",
       icon: FileText,
       color: "bg-amber-50 text-amber-600",
-      href: "clinic-management",
+      href: "patient-history",
+      action: () => router.push("/dashboard/patient-history"),
     },
     {
       title: "Laboratorio",
       icon: FlaskConical,
       color: "bg-green-50 text-green-600",
       href: "laboratory",
+      action: () => router.push("/dashboard/laboratory"),
     },
   ];
 
+  // Helper function to get next appointment
+  const getNextAppointment = (appointments: BackendAppointment[], specialtyMapping: Record<string, string> = {}) => {
+    const now = new Date();
+    
+    // Filter upcoming appointments that are not cancelled
+    const upcomingAppointments = appointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date_time);
+      return appointmentDate > now && appointment.status !== 'cancelled';
+    });
+
+    // Sort by date to get the next one
+    upcomingAppointments.sort((a, b) => {
+      return new Date(a.date_time).getTime() - new Date(b.date_time).getTime();
+    });
+
+    if (upcomingAppointments.length === 0) return null;
+
+    const nextAppt = upcomingAppointments[0];
+    const appointmentDate = new Date(nextAppt.date_time);
+    
+    // Format date in Spanish manually
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    
+    const dayName = days[appointmentDate.getDay()];
+    const day = appointmentDate.getDate();
+    const monthName = months[appointmentDate.getMonth()];
+    const year = appointmentDate.getFullYear();
+    
+    return {
+      doctor: nextAppt.physician_name || "Médico no asignado",
+      specialty: (() => {
+        const originalSpecialty = nextAppt.Physician?.physician_specialty;
+        const mappedSpecialty = specialtyMapping[originalSpecialty];
+        return mappedSpecialty || originalSpecialty || "Consulta General";
+      })(),
+      date: `${dayName}, ${day} de ${monthName} de ${year}`,
+      time: format(appointmentDate, "h:mm a"),
+      location: nextAppt.clinic_name || "Clínica",
+      address: nextAppt.clinic_address || "Dirección no disponible",
+      appointmentId: nextAppt.id,
+      status: nextAppt.status,
+      providerId: nextAppt.physician_id
+    };
+  };
+
   useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!user?.id) return;
+
+      try {
+        // Load services/specialties mapping
+        let specialtyMapping: Record<string, string> = {};
+        try {
+          const servicesResponse = await getAllServices(1, 100);
+          const services = Array.isArray(servicesResponse.data) 
+            ? servicesResponse.data 
+            : (servicesResponse.data as any).data ?? [];
+          
+          services.forEach((service: any) => {
+            specialtyMapping[service.id] = service.name;
+          });
+        } catch (error) {
+          console.error('Error loading specialties:', error);
+        }
+
+        // Fetch patient appointments
+        const backendAppointments = await appointmentService.getAppointmentsByUserId(user.id);
+        console.log('Fetched patient appointments:', backendAppointments);
+        
+        // Get next appointment
+        const nextAppt = getNextAppointment(backendAppointments, specialtyMapping);
+        setNextAppointment(nextAppt);
+        console.log('Next appointment:', nextAppt);
+
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     const timer = setTimeout(() => {
-      setIsLoading(false);
+      fetchAppointments();
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -93,7 +179,7 @@ export default function PatientDashboardPage() {
     show: {
       opacity: 1,
       y: 0,
-      transition: { type: "spring", stiffness: 300, damping: 24 },
+      transition: { type: "spring" as const, stiffness: 300, damping: 24 },
     },
   };
 
@@ -122,79 +208,6 @@ export default function PatientDashboardPage() {
       </div>
     );
   }
-
-  const patientData = {
-    name: "Sarah Johnson",
-    age: 42,
-    gender: "Female",
-    bloodType: "A+",
-    height: "5'6\"",
-    weight: "145 lbs",
-    bmi: 23.4,
-    address: "123 Main St, Anytown, CA 94321",
-    phone: "(555) 123-4567",
-    email: "sarah.johnson@example.com",
-    emergencyContact: {
-      name: "Michael Johnson",
-      relationship: "Spouse",
-      phone: "(555) 987-6543",
-    },
-    nextAppointment: {
-      doctor: "Dr. Rebecca Taylor",
-      specialty: "Cardiology",
-      date: "June 15, 2025",
-      time: "10:30 AM",
-      location: "Main Medical Center",
-      address: "456 Health Ave, Anytown, CA 94321",
-    },
-    vitalSigns: {
-      bloodPressure: "120/80 mmHg",
-      heartRate: 72,
-      temperature: "98.6°F",
-      respiratoryRate: 16,
-      oxygenSaturation: 98,
-    },
-    medications: [
-      {
-        name: "Lisinopril",
-        dosage: "10mg",
-        frequency: "Once daily",
-        purpose: "Blood pressure",
-      },
-      {
-        name: "Atorvastatin",
-        dosage: "20mg",
-        frequency: "Once daily at bedtime",
-        purpose: "Cholesterol",
-      },
-      {
-        name: "Metformin",
-        dosage: "500mg",
-        frequency: "Twice daily with meals",
-        purpose: "Blood sugar",
-      },
-    ],
-    recentActivity: [
-      {
-        type: "Appointment",
-        description: "Annual Physical Examination",
-        date: "May 10, 2025",
-        doctor: "Dr. James Wilson",
-      },
-      {
-        type: "Lab Result",
-        description: "Complete Blood Count",
-        date: "May 12, 2025",
-        status: "Normal",
-      },
-      {
-        type: "Prescription",
-        description: "Lisinopril Refill",
-        date: "May 15, 2025",
-        status: "Filled",
-      },
-    ],
-  };
 
   const mockResults = [
     {
@@ -249,7 +262,7 @@ export default function PatientDashboardPage() {
               className="space-y-6"
             >
               {/* Header Section */}
-              <motion.div variants={item} className="mb-8">
+              <motion.div variants={item} className="mb-6">
                 <div className="text-center sm:text-left">
                   <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-2">
                     Bienvenido, {user?.name}
@@ -261,7 +274,7 @@ export default function PatientDashboardPage() {
               </motion.div>
 
               {/* Quick Actions Section */}
-              <motion.div variants={item}>
+              <motion.div variants={item} className="mb-8">
                 <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
                   <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -272,18 +285,18 @@ export default function PatientDashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {actions.map((action, i) => (
                         <Button 
                           key={i} 
                           variant="outline" 
-                          className="h-24 flex flex-col items-center justify-center gap-2 p-4 hover:shadow-md transition-all duration-200"
-                          onClick={() => router.push(`/dashboard/${action.href}`)}
+                          className="h-28 flex flex-col items-center justify-center gap-3 p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 group"
+                          onClick={action.action}
                         >
-                          <div className={`p-2 rounded-lg ${action.color}`}>
+                          <div className={`p-3 rounded-xl ${action.color} group-hover:scale-110 transition-transform duration-200`}>
                             <action.icon className="h-6 w-6" />
                           </div>
-                          <span className="text-sm font-medium text-center">{action.title}</span>
+                          <span className="text-sm font-medium text-center leading-tight">{action.title}</span>
                         </Button>
                       ))}
                     </div>
@@ -291,69 +304,93 @@ export default function PatientDashboardPage() {
                 </Card>
               </motion.div>
 
+              {/* Top Priority Section - Next Appointment */}
+              <motion.div variants={item} className="mb-6">
+                {nextAppointment ? (
+                  <NextAppointmentCard appointment={nextAppointment} />
+                ) : (
+                  <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                        Próxima Cita
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-6">
+                        <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-600 dark:text-slate-400">
+                          No tienes citas programadas próximamente
+                        </p>
+                        <Button 
+                          className="mt-4" 
+                          onClick={() => router.push("/dashboard/appointments")}
+                        >
+                          Programar Cita
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+
               {/* Main Content Grid */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 
-                {/* Left Column - Primary Content */}
-                <div className="xl:col-span-2 space-y-6">
-                  
-                  {/* Next Appointment */}
-                  <motion.div variants={item}>
-                    <NextAppointmentCard appointment={patientData.nextAppointment} />
-                  </motion.div>
+                {/* Lab Results - Takes more space on larger screens */}
+                <motion.div variants={item} className="lg:col-span-1 xl:col-span-2">
+                  <LabResults results={mockResults} />
+                </motion.div>
 
-                  {/* Lab Results */}
-                  <motion.div variants={item}>
-                    <LabResults results={mockResults} />
-                  </motion.div>
-
-                </div>
-
-                {/* Right Column - Secondary Content */}
-                <div className="xl:col-span-1 space-y-6">
-                  
-                  {/* Recent Activity */}
-                  <motion.div variants={item}>
-                    <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white">
-                          Actividad Reciente
-                        </CardTitle>
-                        <CardDescription>
-                          Últimas actualizaciones de tu historial
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <RecentActivity />
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-
-                  {/* Analytics Overview */}
-                  <motion.div variants={item}>
-                    <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white">
-                          Análisis del Sistema
-                        </CardTitle>
-                        <CardDescription>
-                          Estadísticas y métricas importantes
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <AnalyticsOverview />
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-
-                </div>
+                {/* Recent Activity - Sidebar on larger screens */}
+                <motion.div variants={item} className="lg:col-span-1 xl:col-span-1">
+                  <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0 h-full">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Activity className="h-5 w-5 text-blue-600" />
+                        Actividad Reciente
+                      </CardTitle>
+                      <CardDescription>
+                        Últimas actualizaciones de tu historial
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <RecentActivity />
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
               </div>
+
+              {/* Bottom Section - Analytics Overview */}
+              <motion.div variants={item} className="mt-8">
+                <Card className="bg-white/95 dark:bg-slate-800/90 shadow-lg border-0">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                      <FlaskConical className="h-5 w-5 text-green-600" />
+                      Análisis del Sistema
+                    </CardTitle>
+                    <CardDescription>
+                      Estadísticas y métricas importantes del sistema
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AnalyticsOverview />
+                  </CardContent>
+                </Card>
+              </motion.div>
 
             </motion.div>
           </div>
         </main>
       </div>
+
+      {/* Clinical History Modal */}
+      <ClinicalHistoryViewerPatient 
+        patientId={user?.id}
+        open={showClinicalHistory}
+        onOpenChange={setShowClinicalHistory}
+      />
     </div>
   );
 }

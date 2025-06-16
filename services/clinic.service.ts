@@ -5,6 +5,14 @@ export const getClinicInformation = async (ownerId: string) => {
   return await apiClient.get<ClinicInformation>(`/clinic/by-owner/${ownerId}`)
 }
 
+export const getClinicInformationByUser = async (user: any) => {
+  if (user.role === 'owner') {
+    return await apiClient.get<ClinicInformation>(`/clinic/by-owner/${user.id}`)
+  } else {
+    return await apiClient.get<ClinicByClinicID>(`/clinic/${user.clinic_id}`)
+  }
+}
+
 export const getAllServices = async (page: number = 1, size: number = 10) => {
   return await apiClient.get<{ data: Services[]; total: number }>(`/clinic/get-services?page=${page}&size=${size}`)
 }
