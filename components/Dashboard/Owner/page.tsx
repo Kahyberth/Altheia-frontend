@@ -117,7 +117,7 @@ export default function OwnerDashboardPage() {
 
   const item = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
   }
 
   if (isLoading) {
@@ -339,7 +339,7 @@ export default function OwnerDashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <AppointmentList />
+                    <AppointmentList appointments={appointments} />
                   </CardContent>
                   <CardFooter className="border-t bg-slate-50 dark:bg-slate-700 dark:border-slate-600 px-6 py-3">
                     <Button variant="ghost" className="w-full justify-center gap-1 text-blue-600 dark:text-blue-400 dark:hover:bg-slate-600">
